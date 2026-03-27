@@ -71,6 +71,11 @@
   }
   body {
     @apply bg-background text-foreground font-body antialiased;
+    /* Prevent iOS native long-press callout & text selection from
+       intercepting our custom context menu long-press gesture */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
     background-image: 
       radial-gradient(circle at 50% 0%, hsl(var(--primary) / var(--glow-opacity)), transparent 50%),
       radial-gradient(circle at 100% 100%, hsl(var(--accent) / var(--glow-opacity-2)), transparent 50%);
@@ -78,6 +83,12 @@
     min-height: 100vh;
   }
   
+  /* Re-enable selection inside text inputs */
+  input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     @apply font-display font-bold tracking-tight;
   }

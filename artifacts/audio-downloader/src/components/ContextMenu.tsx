@@ -19,13 +19,15 @@ interface MenuItem {
   separator?: boolean;
 }
 
-const LONG_PRESS_MS = 500;
+const LONG_PRESS_MS = 600;
+const MOVE_THRESHOLD = 12; // px — ignore tiny drift, only cancel on real scroll
 
 export function ContextMenu() {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [copied, setCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchOrigin = useRef<{ x: number; y: number } | null>(null);
   const [, navigate] = useLocation();
 
   const open = useCallback((x: number, y: number) => {
@@ -34,6 +36,14 @@ export function ContextMenu() {
   }, []);
 
   const close = useCallback(() => setPos(null), []);
+
+  const cancelLongPress = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    touchOrigin.current = null;
+  }, []);
 
   // Right-click on desktop
   useEffect(() => {
@@ -45,29 +55,43 @@ export function ContextMenu() {
     return () => document.removeEventListener("contextmenu", onContextMenu);
   }, [open]);
 
-  // Long-press on mobile
+  // Long-press on mobile — only cancel on real movement (not iOS micro-drift)
   useEffect(() => {
     const onTouchStart = (e: TouchEvent) => {
+      cancelLongPress();
       const touch = e.touches[0];
+      touchOrigin.current = { x: touch.clientX, y: touch.clientY };
       longPressTimer.current = setTimeout(() => {
-        open(touch.clientX, touch.clientY);
+        if (touchOrigin.current) {
+          open(touchOrigin.current.x, touchOrigin.current.y);
+        }
+        touchOrigin.current = null;
       }, LONG_PRESS_MS);
     };
-    const cancelLongPress = () => {
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-        longPressTimer.current = null;
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!touchOrigin.current) return;
+      const touch = e.touches[0];
+      const dx = Math.abs(touch.clientX - touchOrigin.current.x);
+      const dy = Math.abs(touch.clientY - touchOrigin.current.y);
+      // Only cancel if the finger actually moved — ignore tiny iOS drift
+      if (dx > MOVE_THRESHOLD || dy > MOVE_THRESHOLD) {
+        cancelLongPress();
       }
     };
+
     document.addEventListener("touchstart", onTouchStart, { passive: true });
+    document.addEventListener("touchmove", onTouchMove, { passive: true });
     document.addEventListener("touchend", cancelLongPress, { passive: true });
-    document.addEventListener("touchmove", cancelLongPress, { passive: true });
+    document.addEventListener("touchcancel", cancelLongPress, { passive: true });
+
     return () => {
       document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchmove", onTouchMove);
       document.removeEventListener("touchend", cancelLongPress);
-      document.removeEventListener("touchmove", cancelLongPress);
+      document.removeEventListener("touchcancel", cancelLongPress);
     };
-  }, [open]);
+  }, [open, cancelLongPress]);
 
   // Dismiss on outside click or Escape
   useEffect(() => {
@@ -87,7 +111,7 @@ export function ContextMenu() {
   // Smart position — keep menu inside viewport
   const getAdjustedPos = (raw: { x: number; y: number }) => {
     const menuW = 220;
-    const menuH = 280;
+    const menuH = 290;
     const pad = 12;
     let x = raw.x;
     let y = raw.y;
@@ -100,7 +124,7 @@ export function ContextMenu() {
 
   const run = (fn: () => void | Promise<void>) => {
     close();
-    setTimeout(() => fn(), 100);
+    setTimeout(() => fn(), 120);
   };
 
   const handleCopy = async () => {
@@ -171,24 +195,22 @@ export function ContextMenu() {
     <AnimatePresence>
       {pos && adjusted && (
         <>
-          {/* invisible full-screen backdrop to catch outside taps */}
           <div className="fixed inset-0 z-[9998]" onClick={close} />
-
           <motion.div
             ref={menuRef}
             key="ctx-menu"
-            initial={{ opacity: 0, scale: 0.92 }}
+            initial={{ opacity: 0, scale: 0.88 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.92 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
+            exit={{ opacity: 0, scale: 0.88 }}
+            transition={{ duration: 0.18, ease: [0.34, 1.56, 0.64, 1] }}
             className="fixed z-[9999] w-[220px] py-1.5 rounded-2xl shadow-2xl overflow-hidden"
             style={{
               left: adjusted.x,
               top: adjusted.y,
-              background: "hsl(var(--card) / 0.92)",
+              background: "hsl(var(--card) / 0.94)",
               border: "1px solid hsl(var(--border))",
-              backdropFilter: "blur(32px)",
-              WebkitBackdropFilter: "blur(32px)",
+              backdropFilter: "blur(40px)",
+              WebkitBackdropFilter: "blur(40px)",
             }}
           >
             <div className="px-3 pt-1.5 pb-2 border-b" style={{ borderColor: "hsl(var(--border))" }}>
@@ -202,10 +224,8 @@ export function ContextMenu() {
                 <div key={i}>
                   <button
                     onClick={() => run(item.action)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors duration-100 group"
-                    style={{
-                      color: item.danger ? "hsl(var(--destructive))" : "hsl(var(--foreground))",
-                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors duration-100"
+                    style={{ color: item.danger ? "hsl(var(--destructive))" : "hsl(var(--foreground))" }}
                     onMouseEnter={(e) => {
                       (e.currentTarget as HTMLElement).style.background = item.danger
                         ? "hsl(var(--destructive) / 0.1)"
@@ -216,11 +236,9 @@ export function ContextMenu() {
                     }}
                   >
                     <span
-                      className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors duration-100"
+                      className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                       style={{
-                        background: item.danger
-                          ? "hsl(var(--destructive) / 0.12)"
-                          : "hsl(var(--primary) / 0.12)",
+                        background: item.danger ? "hsl(var(--destructive) / 0.12)" : "hsl(var(--primary) / 0.12)",
                         color: item.danger ? "hsl(var(--destructive))" : "hsl(var(--primary))",
                       }}
                     >
@@ -235,7 +253,6 @@ export function ContextMenu() {
                       )}
                     </div>
                   </button>
-
                   {item.separator && (
                     <div className="mx-3 my-1 border-t" style={{ borderColor: "hsl(var(--border))" }} />
                   )}
