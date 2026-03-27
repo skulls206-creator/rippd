@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, Music2, RotateCcw, AlertCircle, Sparkles } from "lucide-react";
+import { Download, Music2, RotateCcw, AlertCircle, Sparkles, Loader2 } from "lucide-react";
 import { useDownloadAudio, type DownloadAudioMutationError } from "@workspace/api-client-react";
 import { Header } from "@/components/Header";
 import { SearchBar } from "@/components/SearchBar";
@@ -18,6 +18,28 @@ export default function Home() {
   const [url, setUrl] = useState("");
   const { mutate, isPending, data, error, reset } = useDownloadAudio();
   const [loadingIdx, setLoadingIdx] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async (token: string, filename: string) => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/download/file/${token}`);
+      if (!res.ok) throw new Error("File expired or unavailable.");
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+    } catch {
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   useEffect(() => {
     if (!isPending) { setLoadingIdx(0); return; }
@@ -139,20 +161,19 @@ export default function Home() {
                 </div>
 
                 <div className="flex gap-2">
-                  <a
-                    href={`/api/download/file/${data.token}`}
-                    download={data.filename}
-                    className="flex-1"
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handleSave(data.token, data.filename)}
+                    disabled={isSaving}
+                    className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-gradient-to-r from-primary to-accent text-white text-sm font-semibold shadow-[0_0_16px_rgba(192,38,211,0.3)] hover:shadow-[0_0_24px_rgba(192,38,211,0.45)] transition-shadow duration-300 disabled:opacity-60"
                   >
-                    <motion.div
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="flex items-center justify-center gap-2 w-full h-10 rounded-xl bg-gradient-to-r from-primary to-accent text-white text-sm font-semibold shadow-[0_0_16px_rgba(192,38,211,0.3)] hover:shadow-[0_0_24px_rgba(192,38,211,0.45)] transition-shadow duration-300"
-                    >
-                      <Download className="w-4 h-4" />
-                      Save MP3
-                    </motion.div>
-                  </a>
+                    {isSaving ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+                    ) : (
+                      <><Download className="w-4 h-4" /> Save MP3</>
+                    )}
+                  </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
