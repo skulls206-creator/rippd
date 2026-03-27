@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
-import { Link2, ArrowRight, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Link2, ArrowRight, Loader2, ClipboardPaste } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SearchBarProps extends React.InputHTMLAttributes<HTMLInputElement> {
   isLoading?: boolean;
@@ -10,6 +10,19 @@ interface SearchBarProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
   ({ className, isLoading, onSubmit, ...props }, ref) => {
+    const isEmpty = !props.value || String(props.value).trim() === "";
+
+    const handlePaste = async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text && props.onChange) {
+          props.onChange({ target: { value: text } } as React.ChangeEvent<HTMLInputElement>);
+        }
+      } catch {
+        // Clipboard access denied — user can paste manually
+      }
+    };
+
     return (
       <div
         className={cn(
@@ -34,7 +47,25 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           {...props}
         />
 
-        <div className="pr-1.5 flex-shrink-0">
+        <div className="flex items-center gap-1 pr-1.5 flex-shrink-0">
+          <AnimatePresence>
+            {isEmpty && (
+              <motion.button
+                key="paste"
+                type="button"
+                initial={{ opacity: 0, scale: 0.85, width: 0 }}
+                animate={{ opacity: 1, scale: 1, width: "auto" }}
+                exit={{ opacity: 0, scale: 0.85, width: 0 }}
+                transition={{ duration: 0.15 }}
+                onClick={handlePaste}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-white hover:bg-white/10 transition-colors duration-200 whitespace-nowrap overflow-hidden"
+              >
+                <ClipboardPaste className="h-3.5 w-3.5 flex-shrink-0" />
+                Paste
+              </motion.button>
+            )}
+          </AnimatePresence>
+
           <motion.button
             type="submit"
             disabled={isLoading || props.disabled}
