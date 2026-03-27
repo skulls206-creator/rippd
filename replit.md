@@ -21,7 +21,8 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 ```text
 artifacts-monorepo/
 ├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
+│   ├── api-server/         # Express API server
+│   └── audio-downloader/   # React+Vite frontend (Audio Downloader app)
 ├── lib/                    # Shared libraries
 │   ├── api-spec/           # OpenAPI spec + Orval codegen config
 │   ├── api-client-react/   # Generated React Query hooks
@@ -91,6 +92,28 @@ Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used b
 
 Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
 
+### `artifacts/audio-downloader` (`@workspace/audio-downloader`)
+
+React + Vite frontend for the Audio Downloader app. Served at `/` (root path).
+
+- Single-page app with dark music-themed design branded as "AUDIORIP"
+- URL input where users paste YouTube/SoundCloud links
+- Uses `useDownloadAudio` hook (generated from OpenAPI) to call `POST /api/download/audio`
+- Shows loading state with animated wave while yt-dlp extracts audio (can take 30-90s)
+- Success state shows track title + "Save MP3" direct download link (`GET /api/download/file/{token}`)
+- Error state shows error message + "Try Again"
+- Packages: framer-motion, lucide-react, clsx, tailwind-merge
+
 ### `scripts` (`@workspace/scripts`)
 
 Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+
+## Audio Downloader — API Routes
+
+The download API is in `artifacts/api-server/src/routes/download.ts`:
+
+- `POST /api/download/info` — fetches track metadata (title, uploader, duration, thumbnail) using yt-dlp `--dump-json`
+- `POST /api/download/audio` — downloads and converts to MP3 using yt-dlp + ffmpeg; returns a short-lived `{ token, title, filename }`
+- `GET /api/download/file/:token` — streams the MP3 file with `Content-Disposition: attachment`
+
+Files are stored in `/tmp/audio-downloads/` and auto-cleaned after 15 minutes. yt-dlp is installed as a Python package; ffmpeg is installed as a system dependency.

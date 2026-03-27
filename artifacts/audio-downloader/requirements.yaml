@@ -1,0 +1,14 @@
+packages:
+  "framer-motion": "For premium audio-wave loading animations and page transitions"
+  "clsx": "Utility for conditionally joining class names"
+  "tailwind-merge": "Utility to merge tailwind classes without style conflicts"
+  "lucide-react": "Beautiful icons for the UI"
+
+images:
+  - path: "artifacts/audio-downloader/public/images/bg-mesh.png"
+    description: "Dark moody abstract 3d gradient mesh in deep electric purple, neon pink, and pitch black. Glossy, smooth, high end music app background, ultra premium aesthetic"
+    aspect_ratio: "16:9"
+
+notes:
+  - "Using the @workspace/api-client-react hooks for API interaction."
+  - "The download file endpoint is a direct href link to trigger the browser's download behavior."

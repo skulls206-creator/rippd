@@ -8,3 +8,27 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface DownloadRequest {
+  /** The YouTube/SoundCloud/etc URL to download audio from */
+  url: string;
+}
+
+export interface TrackInfo {
+  title: string;
+  uploader: string;
+  duration?: number | null;
+  thumbnail?: string | null;
+  platform: string;
+}
+
+export interface DownloadResult {
+  /** Token to use with GET /download/file/{token} */
+  token: string;
+  title: string;
+  filename: string;
+}
+
+export interface ErrorResponse {
+  error: string;
+}

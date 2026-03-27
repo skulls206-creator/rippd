@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: download
+    description: Audio download operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,94 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /download/info:
+    post:
+      operationId: getDownloadInfo
+      tags: [download]
+      summary: Get audio info
+      description: Returns metadata about a downloadable audio track
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DownloadRequest"
+      responses:
+        "200":
+          description: Track info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrackInfo"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /download/audio:
+    post:
+      operationId: downloadAudio
+      tags: [download]
+      summary: Download audio as MP3
+      description: Downloads and converts audio to MP3, returns a download token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DownloadRequest"
+      responses:
+        "200":
+          description: Download ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DownloadResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /download/file/{token}:
+    get:
+      operationId: getDownloadFile
+      tags: [download]
+      summary: Download the audio file
+      description: Streams the MP3 file for the given download token
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: MP3 audio file
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +123,51 @@ components:
           type: string
       required:
         - status
-
+    DownloadRequest:
+      type: object
+      properties:
+        url:
+          type: string
+          description: The YouTube/SoundCloud/etc URL to download audio from
+      required:
+        - url
+    TrackInfo:
+      type: object
+      properties:
+        title:
+          type: string
+        uploader:
+          type: string
+        duration:
+          type: number
+          nullable: true
+        thumbnail:
+          type: string
+          nullable: true
+        platform:
+          type: string
+      required:
+        - title
+        - uploader
+        - platform
+    DownloadResult:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Token to use with GET /download/file/{token}
+        title:
+          type: string
+        filename:
+          type: string
+      required:
+        - token
+        - title
+        - filename
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error

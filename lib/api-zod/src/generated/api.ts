@@ -14,3 +14,47 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Returns metadata about a downloadable audio track
+ * @summary Get audio info
+ */
+export const GetDownloadInfoBody = zod.object({
+  url: zod
+    .string()
+    .describe("The YouTube\/SoundCloud\/etc URL to download audio from"),
+});
+
+export const GetDownloadInfoResponse = zod.object({
+  title: zod.string(),
+  uploader: zod.string(),
+  duration: zod.number().nullish(),
+  thumbnail: zod.string().nullish(),
+  platform: zod.string(),
+});
+
+/**
+ * Downloads and converts audio to MP3, returns a download token
+ * @summary Download audio as MP3
+ */
+export const DownloadAudioBody = zod.object({
+  url: zod
+    .string()
+    .describe("The YouTube\/SoundCloud\/etc URL to download audio from"),
+});
+
+export const DownloadAudioResponse = zod.object({
+  token: zod
+    .string()
+    .describe("Token to use with GET \/download\/file\/{token}"),
+  title: zod.string(),
+  filename: zod.string(),
+});
+
+/**
+ * Streams the MP3 file for the given download token
+ * @summary Download the audio file
+ */
+export const GetDownloadFileParams = zod.object({
+  token: zod.coerce.string(),
+});

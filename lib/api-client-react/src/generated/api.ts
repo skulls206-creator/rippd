@@ -5,18 +5,27 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type {
+  DownloadRequest,
+  DownloadResult,
+  ErrorResponse,
+  HealthStatus,
+  TrackInfo,
+} from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -92,6 +101,268 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns metadata about a downloadable audio track
+ * @summary Get audio info
+ */
+export const getGetDownloadInfoUrl = () => {
+  return `/api/download/info`;
+};
+
+export const getDownloadInfo = async (
+  downloadRequest: DownloadRequest,
+  options?: RequestInit,
+): Promise<TrackInfo> => {
+  return customFetch<TrackInfo>(getGetDownloadInfoUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(downloadRequest),
+  });
+};
+
+export const getGetDownloadInfoMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getDownloadInfo>>,
+    TError,
+    { data: BodyType<DownloadRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof getDownloadInfo>>,
+  TError,
+  { data: BodyType<DownloadRequest> },
+  TContext
+> => {
+  const mutationKey = ["getDownloadInfo"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof getDownloadInfo>>,
+    { data: BodyType<DownloadRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return getDownloadInfo(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GetDownloadInfoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof getDownloadInfo>>
+>;
+export type GetDownloadInfoMutationBody = BodyType<DownloadRequest>;
+export type GetDownloadInfoMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get audio info
+ */
+export const useGetDownloadInfo = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getDownloadInfo>>,
+    TError,
+    { data: BodyType<DownloadRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof getDownloadInfo>>,
+  TError,
+  { data: BodyType<DownloadRequest> },
+  TContext
+> => {
+  return useMutation(getGetDownloadInfoMutationOptions(options));
+};
+
+/**
+ * Downloads and converts audio to MP3, returns a download token
+ * @summary Download audio as MP3
+ */
+export const getDownloadAudioUrl = () => {
+  return `/api/download/audio`;
+};
+
+export const downloadAudio = async (
+  downloadRequest: DownloadRequest,
+  options?: RequestInit,
+): Promise<DownloadResult> => {
+  return customFetch<DownloadResult>(getDownloadAudioUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(downloadRequest),
+  });
+};
+
+export const getDownloadAudioMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof downloadAudio>>,
+    TError,
+    { data: BodyType<DownloadRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof downloadAudio>>,
+  TError,
+  { data: BodyType<DownloadRequest> },
+  TContext
+> => {
+  const mutationKey = ["downloadAudio"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof downloadAudio>>,
+    { data: BodyType<DownloadRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return downloadAudio(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DownloadAudioMutationResult = NonNullable<
+  Awaited<ReturnType<typeof downloadAudio>>
+>;
+export type DownloadAudioMutationBody = BodyType<DownloadRequest>;
+export type DownloadAudioMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Download audio as MP3
+ */
+export const useDownloadAudio = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof downloadAudio>>,
+    TError,
+    { data: BodyType<DownloadRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof downloadAudio>>,
+  TError,
+  { data: BodyType<DownloadRequest> },
+  TContext
+> => {
+  return useMutation(getDownloadAudioMutationOptions(options));
+};
+
+/**
+ * Streams the MP3 file for the given download token
+ * @summary Download the audio file
+ */
+export const getGetDownloadFileUrl = (token: string) => {
+  return `/api/download/file/${token}`;
+};
+
+export const getDownloadFile = async (
+  token: string,
+  options?: RequestInit,
+): Promise<Blob> => {
+  return customFetch<Blob>(getGetDownloadFileUrl(token), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetDownloadFileQueryKey = (token: string) => {
+  return [`/api/download/file/${token}`] as const;
+};
+
+export const getGetDownloadFileQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDownloadFile>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDownloadFile>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetDownloadFileQueryKey(token);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getDownloadFile>>> = ({
+    signal,
+  }) => getDownloadFile(token, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!token,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDownloadFile>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetDownloadFileQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDownloadFile>>
+>;
+export type GetDownloadFileQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Download the audio file
+ */
+
+export function useGetDownloadFile<
+  TData = Awaited<ReturnType<typeof getDownloadFile>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDownloadFile>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDownloadFileQueryOptions(token, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
