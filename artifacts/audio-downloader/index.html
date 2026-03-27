@@ -8,6 +8,23 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      (function() {
+        var themes = {
+          void: {"--background":"240 10% 4%","--foreground":"0 0% 98%","--primary":"280 100% 60%","--accent":"180 100% 50%","--glow-opacity":"0.15","--glow-opacity-2":"0.1"},
+          arctic: {"--background":"220 30% 97%","--foreground":"230 25% 15%","--primary":"252 80% 57%","--accent":"200 90% 50%","--glow-opacity":"0.07","--glow-opacity-2":"0.05"},
+          midnight: {"--background":"0 0% 3%","--foreground":"0 0% 97%","--primary":"322 100% 60%","--accent":"45 100% 57%","--glow-opacity":"0.2","--glow-opacity-2":"0.12"},
+          sunset: {"--background":"15 25% 5%","--foreground":"30 20% 95%","--primary":"22 100% 55%","--accent":"350 95% 65%","--glow-opacity":"0.22","--glow-opacity-2":"0.16"},
+          ocean: {"--background":"222 45% 5%","--foreground":"210 20% 96%","--primary":"213 100% 60%","--accent":"187 96% 48%","--glow-opacity":"0.18","--glow-opacity-2":"0.12"},
+          emerald: {"--background":"155 35% 4%","--foreground":"140 20% 95%","--primary":"152 100% 40%","--accent":"84 90% 50%","--glow-opacity":"0.18","--glow-opacity-2":"0.12"}
+        };
+        var saved = localStorage.getItem('rippd-theme') || 'void';
+        var vars = themes[saved] || themes.void;
+        var root = document.documentElement;
+        root.setAttribute('data-theme', saved);
+        Object.keys(vars).forEach(function(k) { root.style.setProperty(k, vars[k]); });
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
