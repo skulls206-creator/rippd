@@ -32,6 +32,7 @@ setInterval(() => {
 const ALLOWED_HOSTS = new Set([
   "youtube.com",
   "www.youtube.com",
+  "m.youtube.com",
   "youtu.be",
   "music.youtube.com",
   "soundcloud.com",
