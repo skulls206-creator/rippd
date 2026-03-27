@@ -1,216 +1,208 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, Music, RefreshCw, AlertCircle } from "lucide-react";
+import { Download, Music2, RotateCcw, AlertCircle, Sparkles } from "lucide-react";
 import { useDownloadAudio, type DownloadAudioMutationError } from "@workspace/api-client-react";
 import { Header } from "@/components/Header";
-import { PremiumInput } from "@/components/PremiumInput";
-import { PremiumButton } from "@/components/PremiumButton";
+import { SearchBar } from "@/components/SearchBar";
 import { AudioWave } from "@/components/AudioWave";
+
+const LOADING_TEXTS = [
+  "Fetching track info...",
+  "Downloading source audio...",
+  "Converting to MP3...",
+  "Finalising file...",
+  "Almost ready...",
+];
 
 export default function Home() {
   const [url, setUrl] = useState("");
   const { mutate, isPending, data, error, reset } = useDownloadAudio();
-  const [loadingText, setLoadingText] = useState("Extracting audio...");
+  const [loadingIdx, setLoadingIdx] = useState(0);
 
   useEffect(() => {
-    if (!isPending) return;
-    
-    const texts = [
-      "Extracting audio...",
-      "Downloading highest quality...",
-      "Converting to MP3...",
-      "Applying metadata...",
-      "Almost there...",
-      "Just a few more seconds..."
-    ];
-    
-    let i = 0;
-    const interval = setInterval(() => {
-      i = (i + 1) % texts.length;
-      setLoadingText(texts[i]);
-    }, 4000);
-    
-    return () => clearInterval(interval);
+    if (!isPending) { setLoadingIdx(0); return; }
+    const id = setInterval(() => setLoadingIdx(i => (i + 1) % LOADING_TEXTS.length), 4000);
+    return () => clearInterval(id);
   }, [isPending]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!url.trim()) return;
     mutate({ data: { url: url.trim() } });
   };
 
   const getErrorMessage = (err: DownloadAudioMutationError): string => {
-    const data = err?.data;
-    if (data && typeof data === "object" && "error" in data && typeof data.error === "string") {
-      return data.error;
-    }
-    return err?.message ?? "Failed to process the URL. Please make sure it's valid and try again.";
+    const d = err?.data;
+    if (d && typeof d === "object" && "error" in d && typeof d.error === "string") return d.error;
+    return err?.message ?? "Couldn't process that link. Check the URL and try again.";
   };
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Background Mesh Image */}
-      <div 
-        className="absolute inset-0 z-0 bg-mesh opacity-30 mix-blend-screen pointer-events-none"
-        style={{ backgroundImage: `url('${import.meta.env.BASE_URL}images/bg-mesh.png')` }}
+      <div
+        className="absolute inset-0 z-0 opacity-25 mix-blend-screen pointer-events-none"
+        style={{ backgroundImage: `url('${import.meta.env.BASE_URL}images/bg-mesh.png')`, backgroundSize: "cover", backgroundPosition: "center" }}
       />
-      
+
       <Header />
 
-      <main className="flex-1 flex items-center justify-center p-4 relative z-10 mt-20">
-        <div className="w-full max-w-2xl mx-auto">
-          
+      <main className="flex-1 flex items-center justify-center px-4 py-8 relative z-10 mt-16">
+        <div className="w-full max-w-xl mx-auto">
           <AnimatePresence mode="wait">
-            
-            {/* STATE: IDLE */}
+
+            {/* IDLE */}
             {!isPending && !data && !error && (
               <motion.div
                 key="idle"
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.5 }}
-                className="text-center space-y-8"
+                exit={{ opacity: 0, scale: 0.97 }}
+                transition={{ duration: 0.4 }}
+                className="space-y-8"
               >
-                <div className="space-y-4">
-                  <h1 className="text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white to-white/60">
+                <div className="text-center space-y-3">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold tracking-wide mb-2">
+                    <Sparkles className="w-3 h-3" />
+                    YouTube · SoundCloud · Spotify · more
+                  </div>
+                  <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight">
                     Rip the audio.
                   </h1>
-                  <p className="text-lg md:text-xl text-muted-foreground max-w-lg mx-auto">
-                    Paste any YouTube or SoundCloud link to instantly download the highest quality MP3 directly to your device.
+                  <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                    Paste any supported link and download the highest quality MP3 directly to your device.
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="glass-panel p-6 md:p-8 rounded-[2rem] space-y-6">
-                  <PremiumInput
+                <form onSubmit={handleSubmit} className="space-y-3">
+                  <SearchBar
                     value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    placeholder="https://youtube.com/watch?v=..."
+                    onChange={e => setUrl(e.target.value)}
+                    placeholder="Paste a YouTube, SoundCloud, or Spotify link..."
                     type="url"
                     required
+                    disabled={isPending}
+                    onSubmit={() => handleSubmit()}
                   />
-                  <PremiumButton 
-                    type="submit" 
-                    className="w-full"
-                    disabled={!url.trim()}
-                  >
-                    <Download className="w-5 h-5" />
-                    Extract Audio
-                  </PremiumButton>
+                  <p className="text-center text-xs text-muted-foreground/50">
+                    For personal use only &bull; Files expire after 15 minutes
+                  </p>
                 </form>
               </motion.div>
             )}
 
-            {/* STATE: LOADING */}
+            {/* LOADING */}
             {isPending && (
               <motion.div
                 key="loading"
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05 }}
-                className="glass-panel p-10 md:p-16 rounded-[2.5rem] flex flex-col items-center justify-center text-center space-y-8"
+                exit={{ opacity: 0, scale: 1.02 }}
+                className="flex flex-col items-center justify-center text-center space-y-6 py-8"
               >
                 <AudioWave />
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-display font-bold text-white">
-                    {loadingText}
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Please don't close this tab. This might take up to a minute depending on track length.
+                <div className="space-y-1.5">
+                  <motion.p
+                    key={loadingIdx}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-base font-semibold text-white"
+                  >
+                    {LOADING_TEXTS[loadingIdx]}
+                  </motion.p>
+                  <p className="text-xs text-muted-foreground">
+                    Don't close this tab — this can take a minute for longer tracks.
                   </p>
                 </div>
               </motion.div>
             )}
 
-            {/* STATE: SUCCESS */}
+            {/* SUCCESS */}
             {data && !isPending && (
               <motion.div
                 key="success"
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-panel p-8 md:p-12 rounded-[2.5rem] flex flex-col items-center text-center space-y-8 relative overflow-hidden"
+                className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.05] backdrop-blur-xl p-6 space-y-5"
               >
-                {/* Decorative success glow */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-primary/20 blur-[100px] rounded-full pointer-events-none" />
-                
-                <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(192,38,211,0.5)]">
-                  <Music className="w-10 h-10 text-white" />
-                </div>
-                
-                <div className="space-y-3 w-full">
-                  <p className="text-sm font-bold text-primary tracking-widest uppercase">READY TO DOWNLOAD</p>
-                  <h3 className="text-2xl md:text-3xl font-display font-bold text-white truncate px-4" title={data.title}>
-                    {data.title}
-                  </h3>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-primary/15 blur-[80px] rounded-full pointer-events-none" />
+
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-[0_0_20px_rgba(192,38,211,0.4)] flex-shrink-0">
+                    <Music2 className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold text-primary tracking-widest uppercase mb-0.5">Ready to download</p>
+                    <h3 className="text-sm font-semibold text-white truncate" title={data.title}>
+                      {data.title}
+                    </h3>
+                  </div>
                 </div>
 
-                <div className="flex flex-col w-full gap-4 sm:flex-row sm:justify-center">
-                  <a 
-                    href={`/api/download/file/${data.token}`} 
+                <div className="flex gap-2">
+                  <a
+                    href={`/api/download/file/${data.token}`}
                     download={data.filename}
-                    className="w-full sm:w-auto"
+                    className="flex-1"
                   >
-                    <PremiumButton className="w-full">
-                      <Download className="w-5 h-5" />
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="flex items-center justify-center gap-2 w-full h-10 rounded-xl bg-gradient-to-r from-primary to-accent text-white text-sm font-semibold shadow-[0_0_16px_rgba(192,38,211,0.3)] hover:shadow-[0_0_24px_rgba(192,38,211,0.45)] transition-shadow duration-300"
+                    >
+                      <Download className="w-4 h-4" />
                       Save MP3
-                    </PremiumButton>
+                    </motion.div>
                   </a>
-                  
-                  <PremiumButton 
-                    variant="secondary" 
-                    onClick={() => {
-                      reset();
-                      setUrl("");
-                    }}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => { reset(); setUrl(""); }}
+                    className="flex items-center gap-1.5 px-4 h-10 rounded-xl bg-white/8 border border-white/10 text-white/70 hover:text-white hover:bg-white/12 text-sm font-medium transition-colors duration-200"
                   >
-                    <RefreshCw className="w-5 h-5" />
-                    Convert Another
-                  </PremiumButton>
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    New
+                  </motion.button>
                 </div>
               </motion.div>
             )}
 
-            {/* STATE: ERROR */}
+            {/* ERROR */}
             {error && !isPending && (
               <motion.div
                 key="error"
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: -12 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="glass-panel border-destructive/30 p-8 md:p-12 rounded-[2.5rem] flex flex-col items-center text-center space-y-8 relative overflow-hidden"
+                className="relative overflow-hidden rounded-2xl border border-destructive/20 bg-destructive/5 backdrop-blur-xl p-6 space-y-4"
               >
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-destructive/20 blur-[100px] rounded-full pointer-events-none" />
-                
-                <div className="w-20 h-20 bg-destructive/20 border border-destructive/50 rounded-full flex items-center justify-center">
-                  <AlertCircle className="w-10 h-10 text-destructive" />
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-destructive/15 border border-destructive/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <AlertCircle className="w-4 h-4 text-destructive" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-white mb-1">Extraction failed</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {getErrorMessage(error)}
+                    </p>
+                  </div>
                 </div>
-                
-                <div className="space-y-3 max-w-md">
-                  <h3 className="text-2xl font-display font-bold text-white">Extraction Failed</h3>
-                  <p className="text-muted-foreground">
-                    {getErrorMessage(error)}
-                  </p>
-                </div>
-
-                <PremiumButton 
-                  variant="outline" 
-                  onClick={() => {
-                    reset();
-                  }}
-                  className="border-white/20 text-white hover:bg-white/10"
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => reset()}
+                  className="flex items-center gap-1.5 px-4 h-9 rounded-xl bg-white/8 border border-white/10 text-white/80 hover:text-white hover:bg-white/12 text-sm font-medium transition-colors duration-200"
                 >
-                  <RefreshCw className="w-5 h-5" />
-                  Try Again
-                </PremiumButton>
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Try again
+                </motion.button>
               </motion.div>
             )}
-            
+
           </AnimatePresence>
-          
         </div>
       </main>
 
-      <footer className="py-6 text-center text-sm text-muted-foreground relative z-10">
-        <p>Built with yt-dlp &bull; For personal use only</p>
+      <footer className="pb-6 text-center text-xs text-muted-foreground/40 relative z-10">
+        Built with yt-dlp
       </footer>
     </div>
   );
