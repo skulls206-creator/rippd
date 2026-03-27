@@ -29,6 +29,60 @@ setInterval(() => {
   }
 }, FILE_TTL_MS);
 
+const ALLOWED_HOSTS = new Set([
+  "youtube.com",
+  "www.youtube.com",
+  "youtu.be",
+  "music.youtube.com",
+  "soundcloud.com",
+  "on.soundcloud.com",
+  "m.soundcloud.com",
+  "open.spotify.com",
+  "tidal.com",
+  "music.apple.com",
+  "bandcamp.com",
+  "vimeo.com",
+  "twitch.tv",
+  "www.twitch.tv",
+  "clips.twitch.tv",
+  "dailymotion.com",
+  "www.dailymotion.com",
+]);
+
+function validateUrl(raw: string): URL {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error("Invalid URL format.");
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error("Only http and https URLs are supported.");
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+
+  if (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    hostname.startsWith("192.168.") ||
+    hostname.startsWith("10.") ||
+    hostname.startsWith("172.")
+  ) {
+    throw new Error("Private or local addresses are not allowed.");
+  }
+
+  if (!ALLOWED_HOSTS.has(hostname)) {
+    throw new Error(
+      "Unsupported site. Paste a link from YouTube, SoundCloud, Spotify, or another supported platform.",
+    );
+  }
+
+  return parsed;
+}
+
 async function ensureTempDir() {
   await fs.mkdir(TEMP_DIR, { recursive: true });
 }
@@ -42,8 +96,12 @@ function runYtDlp(args: string[]): Promise<{ stdout: string; stderr: string }> {
     let stdout = "";
     let stderr = "";
 
-    proc.stdout.on("data", (d: Buffer) => { stdout += d.toString(); });
-    proc.stderr.on("data", (d: Buffer) => { stderr += d.toString(); });
+    proc.stdout.on("data", (d: Buffer) => {
+      stdout += d.toString();
+    });
+    proc.stderr.on("data", (d: Buffer) => {
+      stderr += d.toString();
+    });
 
     proc.on("close", (code) => {
       if (code === 0) {
@@ -60,7 +118,15 @@ function runYtDlp(args: string[]): Promise<{ stdout: string; stderr: string }> {
 }
 
 function sanitizeFilename(name: string): string {
-  return name.replace(/[^\w\s\-().]/g, "").replace(/\s+/g, "_").slice(0, 100);
+  return name
+    .replace(/[^\w\s\-().]/g, "")
+    .replace(/\s+/g, "_")
+    .slice(0, 100);
+}
+
+function parseTitle(raw: string): string {
+  const first = raw.trim().split("\n")[0].trim();
+  return first.replace(/^after_move:/i, "").trim() || "audio";
 }
 
 async function findOutputFile(fileId: string): Promise<string | null> {
@@ -82,12 +148,14 @@ router.post("/download/info", async (req, res) => {
   }
 
   try {
-    const { stdout } = await runYtDlp([
-      "--dump-json",
-      "--no-playlist",
-      url,
-    ]);
+    validateUrl(url);
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : "Invalid URL" });
+    return;
+  }
 
+  try {
+    const { stdout } = await runYtDlp(["--dump-json", "--no-playlist", url]);
     const info = JSON.parse(stdout.trim().split("\n")[0]);
     res.json({
       title: info.title || "Unknown Title",
@@ -111,6 +179,13 @@ router.post("/download/audio", async (req, res) => {
   }
 
   try {
+    validateUrl(url);
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : "Invalid URL" });
+    return;
+  }
+
+  try {
     await ensureTempDir();
 
     const fileId = crypto.randomBytes(16).toString("hex");
@@ -119,14 +194,18 @@ router.post("/download/audio", async (req, res) => {
     const { stdout } = await runYtDlp([
       "--no-playlist",
       "--extract-audio",
-      "--audio-format", "mp3",
-      "--audio-quality", "0",
-      "--output", outputTemplate,
-      "--print", "after_move:%(title)s",
+      "--audio-format",
+      "mp3",
+      "--audio-quality",
+      "0",
+      "--output",
+      outputTemplate,
+      "--print",
+      "after_move:%(title)s",
       url,
     ]);
 
-    const title = stdout.trim().split("\n")[0] || "audio";
+    const title = parseTitle(stdout);
     const outputPath = await findOutputFile(fileId);
 
     if (!outputPath) {
@@ -134,14 +213,16 @@ router.post("/download/audio", async (req, res) => {
     }
 
     const token = crypto.randomBytes(24).toString("hex");
+    const filename = `${sanitizeFilename(title)}.mp3`;
+
     downloadTokens.set(token, {
       filePath: outputPath,
-      filename: `${sanitizeFilename(title)}.mp3`,
+      filename,
       title,
       createdAt: Date.now(),
     });
 
-    res.json({ token, title, filename: `${sanitizeFilename(title)}.mp3` });
+    res.json({ token, title, filename });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Download failed";
     res.status(500).json({ error: message.split("\n")[0].slice(0, 300) });
