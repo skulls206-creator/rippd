@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, Music, RefreshCw, AlertCircle } from "lucide-react";
-import { useDownloadAudio } from "@workspace/api-client-react";
+import { useDownloadAudio, type DownloadAudioMutationError } from "@workspace/api-client-react";
 import { Header } from "@/components/Header";
 import { PremiumInput } from "@/components/PremiumInput";
 import { PremiumButton } from "@/components/PremiumButton";
@@ -40,12 +40,12 @@ export default function Home() {
     mutate({ data: { url: url.trim() } });
   };
 
-  // Safely extract error message from unknown error types
-  const getErrorMessage = (err: any) => {
-    if (err?.response?.data?.error) return err.response.data.error;
-    if (err?.error) return err.error;
-    if (err?.message) return err.message;
-    return "Failed to process the URL. Please make sure it's valid and try again.";
+  const getErrorMessage = (err: DownloadAudioMutationError): string => {
+    const data = err?.data;
+    if (data && typeof data === "object" && "error" in data && typeof data.error === "string") {
+      return data.error;
+    }
+    return err?.message ?? "Failed to process the URL. Please make sure it's valid and try again.";
   };
 
   return (
