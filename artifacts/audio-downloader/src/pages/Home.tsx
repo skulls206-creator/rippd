@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, Music2, RotateCcw, AlertCircle, Sparkles, Loader2 } from "lucide-react";
+import { Download, Music2, RotateCcw, AlertCircle, Sparkles, Loader2, ShieldAlert, ExternalLink } from "lucide-react";
 import {
   useDownloadAudio,
   useGetPlaylistInfo,
@@ -42,12 +42,36 @@ function looksLikePlaylist(url: string): boolean {
   }
 }
 
+const DRM_HOSTS = new Set([
+  "open.spotify.com",
+  "spotify.com",
+  "tidal.com",
+  "music.apple.com",
+]);
+
+const DRM_SERVICE_NAMES: Record<string, string> = {
+  "open.spotify.com": "Spotify",
+  "spotify.com": "Spotify",
+  "tidal.com": "Tidal",
+  "music.apple.com": "Apple Music",
+};
+
+function getDrmService(url: string): string | null {
+  try {
+    const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+    return DRM_HOSTS.has(host) ? (DRM_SERVICE_NAMES[host] ?? "this service") : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function Home() {
   const [url, setUrl] = useState("");
   const [loadingIdx, setLoadingIdx] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
 
   const isPlaylist = looksLikePlaylist(url);
+  const drmService = getDrmService(url);
 
   const {
     mutate: downloadAudio,
@@ -166,6 +190,48 @@ export default function Home() {
                     isPlaylist={isPlaylist}
                     onSubmit={() => handleSubmit()}
                   />
+
+                  <AnimatePresence>
+                    {drmService && (
+                      <motion.div
+                        key="drm-warning"
+                        initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                        transition={{ duration: 0.25 }}
+                        className="rounded-2xl border border-amber-500/25 bg-amber-500/8 backdrop-blur-xl p-4 space-y-3"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <ShieldAlert className="w-4 h-4 text-amber-400" />
+                          </div>
+                          <div className="min-w-0 space-y-1">
+                            <p className="text-sm font-semibold" style={{ color: "hsl(var(--foreground))" }}>
+                              {drmService} uses DRM protection
+                            </p>
+                            <p className="text-xs leading-relaxed" style={{ color: "hsl(var(--muted-foreground))" }}>
+                              {drmService} encrypts its audio so no tool can download it directly. But you can move your music to YouTube first, then rip it here.
+                            </p>
+                          </div>
+                        </div>
+                        <a
+                          href="https://www.tunemymusic.com"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 hover:brightness-110 active:scale-[0.98]"
+                          style={{
+                            background: "linear-gradient(135deg, hsl(38 100% 55% / 0.18), hsl(38 100% 55% / 0.08))",
+                            border: "1px solid hsl(38 100% 55% / 0.3)",
+                            color: "hsl(38 95% 65%)",
+                          }}
+                        >
+                          <span>Move your {drmService} music to YouTube with TuneMyMusic</span>
+                          <ExternalLink className="w-3.5 h-3.5 flex-shrink-0 ml-2" />
+                        </a>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   <p className="text-center text-xs text-muted-foreground/50">
                     For personal use only &bull; Files expire after 15 minutes
                   </p>
