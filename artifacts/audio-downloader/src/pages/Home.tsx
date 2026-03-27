@@ -12,7 +12,6 @@ export default function Home() {
   const { mutate, isPending, data, error, reset } = useDownloadAudio();
   const [loadingText, setLoadingText] = useState("Extracting audio...");
 
-  // Rotate loading text to keep user engaged during long yt-dlp operations
   useEffect(() => {
     if (!isPending) return;
     
@@ -150,10 +149,6 @@ export default function Home() {
                     href={`/api/download/file/${data.token}`} 
                     download={data.filename}
                     className="w-full sm:w-auto"
-                    onClick={(e) => {
-                      // Note: Standard links with download attributes work best for direct file saves
-                      // We don't prevent default here so the browser handles the download
-                    }}
                   >
                     <PremiumButton className="w-full">
                       <Download className="w-5 h-5" />

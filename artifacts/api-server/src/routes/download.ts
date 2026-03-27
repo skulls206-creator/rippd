@@ -8,16 +8,18 @@ import crypto from "crypto";
 const router: IRouter = Router();
 
 const TEMP_DIR = join(tmpdir(), "audio-downloads");
-const downloadTokens = new Map<string, { filePath: string; filename: string; title: string; createdAt: number }>();
-
-const CLEANUP_INTERVAL_MS = 30 * 60 * 1000;
 const FILE_TTL_MS = 15 * 60 * 1000;
 
-async function ensureTempDir() {
-  await fs.mkdir(TEMP_DIR, { recursive: true });
+interface DownloadEntry {
+  filePath: string;
+  filename: string;
+  title: string;
+  createdAt: number;
 }
 
-function cleanupOldFiles() {
+const downloadTokens = new Map<string, DownloadEntry>();
+
+setInterval(() => {
   const now = Date.now();
   for (const [token, info] of downloadTokens.entries()) {
     if (now - info.createdAt > FILE_TTL_MS) {
@@ -25,9 +27,11 @@ function cleanupOldFiles() {
       downloadTokens.delete(token);
     }
   }
-}
+}, FILE_TTL_MS);
 
-setInterval(cleanupOldFiles, CLEANUP_INTERVAL_MS);
+async function ensureTempDir() {
+  await fs.mkdir(TEMP_DIR, { recursive: true });
+}
 
 function runYtDlp(args: string[]): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
@@ -63,9 +67,7 @@ async function findOutputFile(fileId: string): Promise<string | null> {
   try {
     const files = await fs.readdir(TEMP_DIR);
     const match = files.find((f) => f.startsWith(fileId));
-    if (match) {
-      return join(TEMP_DIR, match);
-    }
+    if (match) return join(TEMP_DIR, match);
   } catch {
   }
   return null;
@@ -96,8 +98,7 @@ router.post("/download/info", async (req, res) => {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to get track info";
-    const clean = message.split("\n")[0].slice(0, 300);
-    res.status(500).json({ error: clean });
+    res.status(500).json({ error: message.split("\n")[0].slice(0, 300) });
   }
 });
 
@@ -126,27 +127,24 @@ router.post("/download/audio", async (req, res) => {
     ]);
 
     const title = stdout.trim().split("\n")[0] || "audio";
-
     const outputPath = await findOutputFile(fileId);
+
     if (!outputPath) {
       throw new Error("Audio file not found after download. The URL may not be supported.");
     }
 
     const token = crypto.randomBytes(24).toString("hex");
-    const safeFilename = `${sanitizeFilename(title)}.mp3`;
-
     downloadTokens.set(token, {
       filePath: outputPath,
-      filename: safeFilename,
+      filename: `${sanitizeFilename(title)}.mp3`,
       title,
       createdAt: Date.now(),
     });
 
-    res.json({ token, title, filename: safeFilename });
+    res.json({ token, title, filename: `${sanitizeFilename(title)}.mp3` });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Download failed";
-    const clean = message.split("\n")[0].slice(0, 300);
-    res.status(500).json({ error: clean });
+    res.status(500).json({ error: message.split("\n")[0].slice(0, 300) });
   }
 });
 
@@ -156,6 +154,13 @@ router.get("/download/file/:token", async (req, res) => {
 
   if (!info) {
     res.status(404).json({ error: "File not found or expired. Please re-download." });
+    return;
+  }
+
+  if (Date.now() - info.createdAt > FILE_TTL_MS) {
+    downloadTokens.delete(token);
+    fs.unlink(info.filePath).catch(() => {});
+    res.status(404).json({ error: "Download link expired. Please re-download." });
     return;
   }
 

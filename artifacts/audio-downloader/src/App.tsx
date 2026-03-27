@@ -5,7 +5,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/Home";
 import NotFound from "@/pages/not-found";
 
-// Initialize the query client with sensible defaults for our fast single-page app
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
