@@ -1,10 +1,16 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, Music2, RotateCcw, AlertCircle, Sparkles, Loader2 } from "lucide-react";
-import { useDownloadAudio, type DownloadAudioMutationError } from "@workspace/api-client-react";
+import {
+  useDownloadAudio,
+  useGetPlaylistInfo,
+  type DownloadAudioMutationError,
+  type GetPlaylistInfoMutationError,
+} from "@workspace/api-client-react";
 import { Header } from "@/components/Header";
 import { SearchBar } from "@/components/SearchBar";
 import { AudioWave } from "@/components/AudioWave";
+import { PlaylistView } from "@/components/PlaylistView";
 
 const LOADING_TEXTS = [
   "Fetching track info...",
@@ -14,11 +20,83 @@ const LOADING_TEXTS = [
   "Almost ready...",
 ];
 
+const PLAYLIST_LOADING_TEXTS = [
+  "Loading playlist...",
+  "Fetching track list...",
+  "Almost there...",
+];
+
+function looksLikePlaylist(url: string): boolean {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.toLowerCase().replace(/^www\./, "");
+    if (["youtube.com", "m.youtube.com", "music.youtube.com"].includes(host)) {
+      return u.searchParams.has("list");
+    }
+    if (host === "soundcloud.com" || host === "m.soundcloud.com") {
+      return u.pathname.includes("/sets/");
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export default function Home() {
   const [url, setUrl] = useState("");
-  const { mutate, isPending, data, error, reset } = useDownloadAudio();
   const [loadingIdx, setLoadingIdx] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+
+  const isPlaylist = looksLikePlaylist(url);
+
+  const {
+    mutate: downloadAudio,
+    isPending: isDownloadPending,
+    data: downloadData,
+    error: downloadError,
+    reset: resetDownload,
+  } = useDownloadAudio();
+
+  const {
+    mutate: loadPlaylist,
+    isPending: isPlaylistPending,
+    data: playlistData,
+    error: playlistError,
+    reset: resetPlaylist,
+  } = useGetPlaylistInfo();
+
+  const isPending = isDownloadPending || isPlaylistPending;
+  const error = downloadError || playlistError;
+
+  const loadingTexts = isPlaylistPending ? PLAYLIST_LOADING_TEXTS : LOADING_TEXTS;
+
+  useEffect(() => {
+    if (!isPending) { setLoadingIdx(0); return; }
+    const id = setInterval(() => setLoadingIdx(i => (i + 1) % loadingTexts.length), 3500);
+    return () => clearInterval(id);
+  }, [isPending, loadingTexts.length]);
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!url.trim()) return;
+    if (isPlaylist) {
+      loadPlaylist({ data: { url: url.trim() } });
+    } else {
+      downloadAudio({ data: { url: url.trim() } });
+    }
+  };
+
+  const handleReset = () => {
+    resetDownload();
+    resetPlaylist();
+    setUrl("");
+  };
+
+  const getErrorMessage = (err: DownloadAudioMutationError | GetPlaylistInfoMutationError): string => {
+    const d = err?.data;
+    if (d && typeof d === "object" && "error" in d && typeof d.error === "string") return d.error;
+    return err?.message ?? "Couldn't process that link. Check the URL and try again.";
+  };
 
   const handleSave = async (token: string, filename: string) => {
     if (isSaving) return;
@@ -41,24 +119,6 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
-    if (!isPending) { setLoadingIdx(0); return; }
-    const id = setInterval(() => setLoadingIdx(i => (i + 1) % LOADING_TEXTS.length), 4000);
-    return () => clearInterval(id);
-  }, [isPending]);
-
-  const handleSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!url.trim()) return;
-    mutate({ data: { url: url.trim() } });
-  };
-
-  const getErrorMessage = (err: DownloadAudioMutationError): string => {
-    const d = err?.data;
-    if (d && typeof d === "object" && "error" in d && typeof d.error === "string") return d.error;
-    return err?.message ?? "Couldn't process that link. Check the URL and try again.";
-  };
-
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
       <div
@@ -73,7 +133,7 @@ export default function Home() {
           <AnimatePresence mode="wait">
 
             {/* IDLE */}
-            {!isPending && !data && !error && (
+            {!isPending && !downloadData && !playlistData && !error && (
               <motion.div
                 key="idle"
                 initial={{ opacity: 0, y: 16 }}
@@ -103,6 +163,7 @@ export default function Home() {
                     type="url"
                     required
                     disabled={isPending}
+                    isPlaylist={isPlaylist}
                     onSubmit={() => handleSubmit()}
                   />
                   <p className="text-center text-xs text-muted-foreground/50">
@@ -129,17 +190,26 @@ export default function Home() {
                     animate={{ opacity: 1, y: 0 }}
                     className="text-base font-semibold text-white"
                   >
-                    {LOADING_TEXTS[loadingIdx]}
+                    {loadingTexts[loadingIdx]}
                   </motion.p>
                   <p className="text-xs text-muted-foreground">
-                    Don't close this tab — this can take a minute for longer tracks.
+                    {isPlaylistPending
+                      ? "Fetching track list — this is quick."
+                      : "Don't close this tab — this can take a minute for longer tracks."}
                   </p>
                 </div>
               </motion.div>
             )}
 
-            {/* SUCCESS */}
-            {data && !isPending && (
+            {/* PLAYLIST VIEW */}
+            {playlistData && !isPending && (
+              <motion.div key="playlist" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+                <PlaylistView playlist={playlistData} onBack={handleReset} />
+              </motion.div>
+            )}
+
+            {/* SINGLE DOWNLOAD SUCCESS */}
+            {downloadData && !isPending && (
               <motion.div
                 key="success"
                 initial={{ opacity: 0, y: 16 }}
@@ -154,8 +224,8 @@ export default function Home() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] font-bold text-primary tracking-widest uppercase mb-0.5">Ready to download</p>
-                    <h3 className="text-sm font-semibold text-white truncate" title={data.title}>
-                      {data.title}
+                    <h3 className="text-sm font-semibold text-white truncate" title={downloadData.title}>
+                      {downloadData.title}
                     </h3>
                   </div>
                 </div>
@@ -164,7 +234,7 @@ export default function Home() {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => handleSave(data.token, data.filename)}
+                    onClick={() => handleSave(downloadData.token, downloadData.filename)}
                     disabled={isSaving}
                     className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-gradient-to-r from-primary to-accent text-white text-sm font-semibold shadow-[0_0_16px_rgba(192,38,211,0.3)] hover:shadow-[0_0_24px_rgba(192,38,211,0.45)] transition-shadow duration-300 disabled:opacity-60"
                   >
@@ -177,7 +247,7 @@ export default function Home() {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => { reset(); setUrl(""); }}
+                    onClick={handleReset}
                     className="flex items-center gap-1.5 px-4 h-10 rounded-xl bg-white/8 border border-white/10 text-white/70 hover:text-white hover:bg-white/12 text-sm font-medium transition-colors duration-200"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
@@ -200,7 +270,9 @@ export default function Home() {
                     <AlertCircle className="w-4 h-4 text-destructive" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white mb-1">Extraction failed</p>
+                    <p className="text-sm font-semibold text-white mb-1">
+                      {isPlaylist ? "Playlist load failed" : "Extraction failed"}
+                    </p>
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       {getErrorMessage(error)}
                     </p>
@@ -209,7 +281,7 @@ export default function Home() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => reset()}
+                  onClick={handleReset}
                   className="flex items-center gap-1.5 px-4 h-9 rounded-xl bg-white/8 border border-white/10 text-white/80 hover:text-white hover:bg-white/12 text-sm font-medium transition-colors duration-200"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />

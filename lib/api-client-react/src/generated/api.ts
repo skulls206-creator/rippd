@@ -21,6 +21,7 @@ import type {
   DownloadResult,
   ErrorResponse,
   HealthStatus,
+  PlaylistInfo,
   TrackInfo,
 } from "./api.schemas";
 
@@ -281,6 +282,93 @@ export const useDownloadAudio = <
   TContext
 > => {
   return useMutation(getDownloadAudioMutationOptions(options));
+};
+
+/**
+ * Returns metadata for all tracks in a playlist URL (no downloading)
+ * @summary Get playlist track list
+ */
+export const getGetPlaylistInfoUrl = () => {
+  return `/api/download/playlist-info`;
+};
+
+export const getPlaylistInfo = async (
+  downloadRequest: DownloadRequest,
+  options?: RequestInit,
+): Promise<PlaylistInfo> => {
+  return customFetch<PlaylistInfo>(getGetPlaylistInfoUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(downloadRequest),
+  });
+};
+
+export const getGetPlaylistInfoMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getPlaylistInfo>>,
+    TError,
+    { data: BodyType<DownloadRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof getPlaylistInfo>>,
+  TError,
+  { data: BodyType<DownloadRequest> },
+  TContext
+> => {
+  const mutationKey = ["getPlaylistInfo"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof getPlaylistInfo>>,
+    { data: BodyType<DownloadRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return getPlaylistInfo(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GetPlaylistInfoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof getPlaylistInfo>>
+>;
+export type GetPlaylistInfoMutationBody = BodyType<DownloadRequest>;
+export type GetPlaylistInfoMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get playlist track list
+ */
+export const useGetPlaylistInfo = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof getPlaylistInfo>>,
+    TError,
+    { data: BodyType<DownloadRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof getPlaylistInfo>>,
+  TError,
+  { data: BodyType<DownloadRequest> },
+  TContext
+> => {
+  return useMutation(getGetPlaylistInfoMutationOptions(options));
 };
 
 /**

@@ -52,6 +52,31 @@ export const DownloadAudioResponse = zod.object({
 });
 
 /**
+ * Returns metadata for all tracks in a playlist URL (no downloading)
+ * @summary Get playlist track list
+ */
+export const GetPlaylistInfoBody = zod.object({
+  url: zod
+    .string()
+    .describe("The YouTube\/SoundCloud\/etc URL to download audio from"),
+});
+
+export const GetPlaylistInfoResponse = zod.object({
+  title: zod.string(),
+  trackCount: zod.number(),
+  tracks: zod.array(
+    zod.object({
+      index: zod.number(),
+      id: zod.string(),
+      url: zod.string(),
+      title: zod.string(),
+      duration: zod.number().nullish(),
+      thumbnail: zod.string().nullish(),
+    }),
+  ),
+});
+
+/**
  * Streams the MP3 file for the given download token
  * @summary Download the audio file
  */

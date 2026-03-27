@@ -10,4 +10,6 @@ export * from "./downloadRequest";
 export * from "./downloadResult";
 export * from "./errorResponse";
 export * from "./healthStatus";
+export * from "./playlistInfo";
+export * from "./playlistTrack";
 export * from "./trackInfo";

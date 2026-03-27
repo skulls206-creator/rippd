@@ -29,6 +29,21 @@ export interface DownloadResult {
   filename: string;
 }
 
+export interface PlaylistTrack {
+  index: number;
+  id: string;
+  url: string;
+  title: string;
+  duration?: number | null;
+  thumbnail?: string | null;
+}
+
+export interface PlaylistInfo {
+  title: string;
+  trackCount: number;
+  tracks: PlaylistTrack[];
+}
+
 export interface ErrorResponse {
   error: string;
 }

@@ -230,6 +230,63 @@ router.post("/download/audio", async (req, res) => {
   }
 });
 
+router.post("/download/playlist-info", async (req, res) => {
+  const { url } = req.body as { url?: string };
+
+  if (!url || typeof url !== "string") {
+    res.status(400).json({ error: "A valid URL is required" });
+    return;
+  }
+
+  try {
+    validateUrl(url);
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : "Invalid URL" });
+    return;
+  }
+
+  try {
+    const { stdout } = await runYtDlp([
+      "--flat-playlist",
+      "--dump-json",
+      "--no-warnings",
+      url,
+    ]);
+
+    const lines = stdout.trim().split("\n").filter(Boolean);
+    if (lines.length === 0) throw new Error("No tracks found in playlist.");
+
+    const tracks = lines.map((line, i) => {
+      const item = JSON.parse(line);
+      const trackUrl =
+        item.url ||
+        item.webpage_url ||
+        (item.id && item.ie_key === "Youtube"
+          ? `https://www.youtube.com/watch?v=${item.id}`
+          : item.id
+            ? `https://www.youtube.com/watch?v=${item.id}`
+            : null);
+      return {
+        index: i + 1,
+        id: item.id || String(i),
+        url: trackUrl || url,
+        title: item.title || `Track ${i + 1}`,
+        duration: item.duration ?? null,
+        thumbnail: item.thumbnails?.[0]?.url ?? item.thumbnail ?? null,
+      };
+    });
+
+    const firstItem = JSON.parse(lines[0]);
+    const playlistTitle =
+      firstItem.playlist_title || firstItem.playlist || "Playlist";
+
+    res.json({ title: playlistTitle, trackCount: tracks.length, tracks });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to load playlist";
+    res.status(500).json({ error: message.split("\n")[0].slice(0, 300) });
+  }
+});
+
 router.get("/download/file/:token", async (req, res) => {
   const { token } = req.params;
   const info = downloadTokens.get(token);

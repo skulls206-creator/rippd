@@ -88,6 +88,37 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /download/playlist-info:
+    post:
+      operationId: getPlaylistInfo
+      tags: [download]
+      summary: Get playlist track list
+      description: Returns metadata for all tracks in a playlist URL (no downloading)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DownloadRequest"
+      responses:
+        "200":
+          description: Playlist info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaylistInfo"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /download/file/{token}:
     get:
       operationId: getDownloadFile
@@ -164,6 +195,43 @@ components:
         - token
         - title
         - filename
+    PlaylistTrack:
+      type: object
+      properties:
+        index:
+          type: number
+        id:
+          type: string
+        url:
+          type: string
+        title:
+          type: string
+        duration:
+          type: number
+          nullable: true
+        thumbnail:
+          type: string
+          nullable: true
+      required:
+        - index
+        - id
+        - url
+        - title
+    PlaylistInfo:
+      type: object
+      properties:
+        title:
+          type: string
+        trackCount:
+          type: number
+        tracks:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlaylistTrack"
+      required:
+        - title
+        - trackCount
+        - tracks
     ErrorResponse:
       type: object
       properties:

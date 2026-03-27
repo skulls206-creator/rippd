@@ -1,15 +1,16 @@
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
-import { Link2, ArrowRight, Loader2, ClipboardPaste } from "lucide-react";
+import { Link2, ArrowRight, Loader2, ClipboardPaste, ListMusic } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface SearchBarProps extends React.InputHTMLAttributes<HTMLInputElement> {
   isLoading?: boolean;
+  isPlaylist?: boolean;
   onSubmit: () => void;
 }
 
 export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
-  ({ className, isLoading, onSubmit, ...props }, ref) => {
+  ({ className, isLoading, isPlaylist, onSubmit, ...props }, ref) => {
     const isEmpty = !props.value || String(props.value).trim() === "";
 
     const handlePaste = async () => {
@@ -83,6 +84,11 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isPlaylist ? (
+              <>
+                <ListMusic className="h-3.5 w-3.5" />
+                Playlist
+              </>
             ) : (
               <>
                 Rip it
