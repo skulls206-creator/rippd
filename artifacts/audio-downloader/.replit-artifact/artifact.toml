@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Audio Downloader"
+title = "RIPPD"
 version = "1.0.0"
 id = "artifacts/audio-downloader"
 router = "path"

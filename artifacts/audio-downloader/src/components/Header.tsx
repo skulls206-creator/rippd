@@ -10,7 +10,7 @@ export function Header() {
           <Disc3 className="w-8 h-8 text-primary relative z-10 animate-[spin_4s_linear_infinite]" />
         </div>
         <span className="font-display font-bold text-xl tracking-wider text-white">
-          AUDIO<span className="text-primary">RIP</span>
+          RIPP<span className="text-primary">D</span>
         </span>
       </Link>
     </header>
