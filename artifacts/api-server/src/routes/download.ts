@@ -85,9 +85,11 @@ async function ensureTempDir() {
   await fs.mkdir(TEMP_DIR, { recursive: true });
 }
 
+const BASE_YTDLP_ARGS = ["--js-runtimes", "node", "--remote-components", "ejs:github"];
+
 function runYtDlp(args: string[]): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
-    const proc = spawn("yt-dlp", args, {
+    const proc = spawn("yt-dlp", [...BASE_YTDLP_ARGS, ...args], {
       env: { ...process.env, PYTHONUNBUFFERED: "1" },
     });
 
