@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, Music2, RotateCcw, AlertCircle, Sparkles, Loader2, ShieldAlert, ExternalLink } from "lucide-react";
+import { Download, Music2, RotateCcw, AlertCircle, Sparkles, Loader2, ShieldAlert, ExternalLink, ClipboardPaste } from "lucide-react";
 import {
   useDownloadAudio,
   useGetPlaylistInfo,
@@ -128,6 +128,24 @@ export default function Home() {
     return () => window.removeEventListener("rippd:paste-rip", handler);
   }, [downloadAudio, loadPlaylist, resetDownload, resetPlaylist]);
 
+  const handlePasteAndRip = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const pastedUrl = text.trim();
+      if (!pastedUrl) return;
+      resetDownload();
+      resetPlaylist();
+      setUrl(pastedUrl);
+      if (looksLikePlaylist(pastedUrl)) {
+        loadPlaylist({ data: { url: pastedUrl } });
+      } else {
+        downloadAudio({ data: { url: pastedUrl } });
+      }
+    } catch {
+      // Clipboard permission denied — silently ignore
+    }
+  };
+
   const handleReset = () => {
     resetDownload();
     resetPlaylist();
@@ -208,6 +226,33 @@ export default function Home() {
                     isPlaylist={isPlaylist}
                     onSubmit={() => handleSubmit()}
                   />
+
+                  <AnimatePresence>
+                    {!url && (
+                      <motion.button
+                        key="paste-rip-btn"
+                        type="button"
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.2 }}
+                        onClick={handlePasteAndRip}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                        className="w-full flex items-center justify-center gap-2 h-11 rounded-2xl text-sm font-semibold border transition-all duration-200"
+                        style={{
+                          background: "hsl(var(--primary) / 0.08)",
+                          borderColor: "hsl(var(--primary) / 0.25)",
+                          color: "hsl(var(--primary))",
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "hsl(var(--primary) / 0.14)")}
+                        onMouseLeave={e => (e.currentTarget.style.background = "hsl(var(--primary) / 0.08)")}
+                      >
+                        <ClipboardPaste className="w-4 h-4" />
+                        Paste &amp; Rip
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
 
                   <AnimatePresence>
                     {drmService && (
