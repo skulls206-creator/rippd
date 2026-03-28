@@ -110,6 +110,24 @@ export default function Home() {
     }
   };
 
+  // Paste & Rip — triggered from the context menu
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const pastedUrl = (e as CustomEvent<{ url: string }>).detail.url;
+      if (!pastedUrl) return;
+      resetDownload();
+      resetPlaylist();
+      setUrl(pastedUrl);
+      if (looksLikePlaylist(pastedUrl)) {
+        loadPlaylist({ data: { url: pastedUrl } });
+      } else {
+        downloadAudio({ data: { url: pastedUrl } });
+      }
+    };
+    window.addEventListener("rippd:paste-rip", handler);
+    return () => window.removeEventListener("rippd:paste-rip", handler);
+  }, [downloadAudio, loadPlaylist, resetDownload, resetPlaylist]);
+
   const handleReset = () => {
     resetDownload();
     resetPlaylist();

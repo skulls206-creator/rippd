@@ -8,7 +8,10 @@ import {
   Share2,
   Trash2,
   CheckCheck,
+  ClipboardPaste,
+  Palette,
 } from "lucide-react";
+import { useTheme } from "../hooks/useTheme";
 
 interface MenuItem {
   icon: React.ReactNode;
@@ -20,7 +23,7 @@ interface MenuItem {
 }
 
 const LONG_PRESS_MS = 600;
-const MOVE_THRESHOLD = 12; // px — ignore tiny drift, only cancel on real scroll
+const MOVE_THRESHOLD = 12;
 
 export function ContextMenu() {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -29,6 +32,7 @@ export function ContextMenu() {
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchOrigin = useRef<{ x: number; y: number } | null>(null);
   const [, navigate] = useLocation();
+  const { theme, setTheme, themes } = useTheme();
 
   const open = useCallback((x: number, y: number) => {
     setPos({ x, y });
@@ -55,36 +59,28 @@ export function ContextMenu() {
     return () => document.removeEventListener("contextmenu", onContextMenu);
   }, [open]);
 
-  // Long-press on mobile — only cancel on real movement (not iOS micro-drift)
+  // Long-press on mobile
   useEffect(() => {
     const onTouchStart = (e: TouchEvent) => {
       cancelLongPress();
       const touch = e.touches[0];
       touchOrigin.current = { x: touch.clientX, y: touch.clientY };
       longPressTimer.current = setTimeout(() => {
-        if (touchOrigin.current) {
-          open(touchOrigin.current.x, touchOrigin.current.y);
-        }
+        if (touchOrigin.current) open(touchOrigin.current.x, touchOrigin.current.y);
         touchOrigin.current = null;
       }, LONG_PRESS_MS);
     };
-
     const onTouchMove = (e: TouchEvent) => {
       if (!touchOrigin.current) return;
       const touch = e.touches[0];
       const dx = Math.abs(touch.clientX - touchOrigin.current.x);
       const dy = Math.abs(touch.clientY - touchOrigin.current.y);
-      // Only cancel if the finger actually moved — ignore tiny iOS drift
-      if (dx > MOVE_THRESHOLD || dy > MOVE_THRESHOLD) {
-        cancelLongPress();
-      }
+      if (dx > MOVE_THRESHOLD || dy > MOVE_THRESHOLD) cancelLongPress();
     };
-
     document.addEventListener("touchstart", onTouchStart, { passive: true });
     document.addEventListener("touchmove", onTouchMove, { passive: true });
     document.addEventListener("touchend", cancelLongPress, { passive: true });
     document.addEventListener("touchcancel", cancelLongPress, { passive: true });
-
     return () => {
       document.removeEventListener("touchstart", onTouchStart);
       document.removeEventListener("touchmove", onTouchMove);
@@ -108,10 +104,9 @@ export function ContextMenu() {
     };
   }, [pos, close]);
 
-  // Smart position — keep menu inside viewport
   const getAdjustedPos = (raw: { x: number; y: number }) => {
-    const menuW = 220;
-    const menuH = 290;
+    const menuW = 230;
+    const menuH = 380;
     const pad = 12;
     let x = raw.x;
     let y = raw.y;
@@ -125,6 +120,24 @@ export function ContextMenu() {
   const run = (fn: () => void | Promise<void>) => {
     close();
     setTimeout(() => fn(), 120);
+  };
+
+  const handlePasteAndRip = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const url = text.trim();
+      if (url) {
+        window.dispatchEvent(new CustomEvent("rippd:paste-rip", { detail: { url } }));
+      }
+    } catch {
+      // Clipboard permission denied — silently ignore
+    }
+  };
+
+  const handleCycleTheme = () => {
+    const idx = themes.findIndex((t) => t.id === theme.id);
+    const next = themes[(idx + 1) % themes.length];
+    setTheme(next);
   };
 
   const handleCopy = async () => {
@@ -153,7 +166,18 @@ export function ContextMenu() {
     window.location.reload();
   };
 
+  // Next theme name for subtitle
+  const nextThemeIdx = themes.findIndex((t) => t.id === theme.id);
+  const nextTheme = themes[(nextThemeIdx + 1) % themes.length];
+
   const items: MenuItem[] = [
+    {
+      icon: <ClipboardPaste className="w-4 h-4" />,
+      label: "Paste & Rip",
+      sublabel: "Paste URL and download now",
+      action: handlePasteAndRip,
+      separator: true,
+    },
     {
       icon: <RefreshCw className="w-4 h-4" />,
       label: "Refresh",
@@ -166,6 +190,17 @@ export function ContextMenu() {
       sublabel: "Back to the start",
       action: () => navigate("/"),
       separator: true,
+    },
+    {
+      icon: (
+        <span
+          className="w-3 h-3 rounded-full ring-1 ring-white/20"
+          style={{ background: nextTheme.swatch, display: "block" }}
+        />
+      ),
+      label: "Cycle Theme",
+      sublabel: `Switch to ${nextTheme.name}`,
+      action: handleCycleTheme,
     },
     {
       icon: copied ? <CheckCheck className="w-4 h-4" /> : <Link2 className="w-4 h-4" />,
@@ -203,7 +238,7 @@ export function ContextMenu() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.88 }}
             transition={{ duration: 0.18, ease: [0.34, 1.56, 0.64, 1] }}
-            className="fixed z-[9999] w-[220px] py-1.5 rounded-2xl shadow-2xl overflow-hidden"
+            className="fixed z-[9999] w-[230px] py-1.5 rounded-2xl shadow-2xl overflow-hidden"
             style={{
               left: adjusted.x,
               top: adjusted.y,
@@ -213,9 +248,13 @@ export function ContextMenu() {
               WebkitBackdropFilter: "blur(40px)",
             }}
           >
-            <div className="px-3 pt-1.5 pb-2 border-b" style={{ borderColor: "hsl(var(--border))" }}>
+            <div className="px-3 pt-1.5 pb-2 border-b flex items-center gap-2" style={{ borderColor: "hsl(var(--border))" }}>
+              <span
+                className="w-3 h-3 rounded-full ring-1 ring-white/20 shrink-0"
+                style={{ background: theme.swatch }}
+              />
               <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "hsl(var(--muted-foreground))" }}>
-                RIPPD
+                RIPPD · {theme.name}
               </p>
             </div>
 
