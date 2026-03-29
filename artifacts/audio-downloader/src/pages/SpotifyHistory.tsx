@@ -365,7 +365,10 @@ export default function SpotifyHistory() {
       />
       <Header />
 
-      <main className="flex-1 flex flex-col px-4 py-8 relative z-10 mt-16 max-w-5xl mx-auto w-full">
+      <main
+        className="flex-1 flex flex-col px-4 py-8 relative z-10 max-w-5xl mx-auto w-full"
+        style={{ marginTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}
+      >
 
         {/* Page title + back */}
         <div className="flex items-center gap-3 mb-6">

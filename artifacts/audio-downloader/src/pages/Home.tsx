@@ -189,7 +189,10 @@ export default function Home() {
 
       <Header />
 
-      <main className="flex-1 flex items-center justify-center px-4 py-8 relative z-10 mt-16">
+      <main
+        className="flex-1 flex items-center justify-center px-4 py-8 relative z-10"
+        style={{ marginTop: "calc(env(safe-area-inset-top, 0px) + 3.5rem)" }}
+      >
         <div className="w-full max-w-xl mx-auto">
           <AnimatePresence mode="wait">
 
