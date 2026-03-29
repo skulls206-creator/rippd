@@ -1,0 +1,29 @@
+I'm adding a new feature to my RIPPD web app. The feature is called "Import Spotify History" and it lives inside the existing app as a page/tab/route — no new branding, no new app name, just part of RIPPD.
+
+Here's what it needs to do:
+
+1. Show a drag-and-drop upload zone where the user can drop one or more Spotify streaming history JSON files (Streaming_History_Audio_*.json from their Spotify data export ZIP).
+
+2. Parse the JSON in the browser (client-side only — no file uploads to the server). Support both the older format (fields: trackName, artistName, msPlayed) and the newer Extended Streaming History format (fields: master_metadata_track_name, master_metadata_album_artist_name, ms_played, master_metadata_album_album_name, spotify_track_uri). Skip any entries that have no track name or artist (podcasts, null entries).
+
+3. Deduplicate all entries into a list of unique tracks. For each unique track store: track name, artist, album, total play count (how many times it appears), total milliseconds played, Spotify URI, and a ytSearchQuery string formatted as "Artist Name Track Name".
+
+4. Display the deduplicated track list in a searchable, sortable, paginated table with columns: #, Track + Artist, Album, Plays, Time Listened, and an action button.
+
+5. The action button per row is a "Rip" button. When clicked it should call the existing yt-dlp/YTDL download function already in RIPPD using the ytSearchQuery field (formatted for ytsearch, e.g. yt-dlp "ytsearch1:Artist Name Track Name" -x --audio-format mp3). Queue the track and mark the row as queued.
+
+6. Add a "Queue All" button at the top that sends all currently filtered tracks to the YTDL queue at once.
+
+7. Add Export CSV and Export JSON buttons that download the filtered track list. The JSON export should include: track, artist, album, plays, minutesListened, ytSearchQuery, spotifyUri.
+
+8. Show stats at the top: unique tracks count, total plays, unique artists, total hours listened.
+
+9. Match the existing RIPPD UI styling exactly — same colors, fonts, component style, dark/light mode behavior. Do not introduce new branding or rename anything.
+
+10. Wire the "Rip" and "Queue All" buttons to the existing download queue/handler in RIPPD. If there is a function or API endpoint already used for YTDL downloads, reuse it. If not, create a placeholder function called `queueYTDLDownload(searchQuery, trackName, artist)` that I can wire up later.
+
+Here is the full working reference implementation of the UI logic to base this on (adapt it to fit RIPPD's component structure — React, TypeScript, whatever the project uses):
+
+[PASTE THE FULL CONTENTS OF spotirip-history-importer.html HERE]
+
+Do not create a new standalone app. Integrate this as a feature inside the existing RIPPD codebase. Match the existing file/component structure of the project.
