@@ -85,9 +85,24 @@ async function ensureTempDir() {
   await fs.mkdir(TEMP_DIR, { recursive: true });
 }
 
-const BASE_YTDLP_ARGS = ["--js-runtimes", "node", "--remote-components", "ejs:github"];
+const BASE_YTDLP_ARGS = [
+  "--js-runtimes", "node",
+  "--remote-components", "ejs:github",
+  "--sleep-requests", "1",
+];
 
-function runYtDlp(args: string[]): Promise<{ stdout: string; stderr: string }> {
+const RETRY_DELAYS_MS = [4000, 8000, 16000];
+const RETRYABLE_PATTERNS = [/429/i, /too many requests/i, /rate.?limit/i, /HTTP Error 429/i];
+
+function isRetryableError(msg: string): boolean {
+  return RETRYABLE_PATTERNS.some((p) => p.test(msg));
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function spawnYtDlp(args: string[]): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     const proc = spawn("yt-dlp", [...BASE_YTDLP_ARGS, ...args], {
       env: { ...process.env, PYTHONUNBUFFERED: "1" },
@@ -96,12 +111,8 @@ function runYtDlp(args: string[]): Promise<{ stdout: string; stderr: string }> {
     let stdout = "";
     let stderr = "";
 
-    proc.stdout.on("data", (d: Buffer) => {
-      stdout += d.toString();
-    });
-    proc.stderr.on("data", (d: Buffer) => {
-      stderr += d.toString();
-    });
+    proc.stdout.on("data", (d: Buffer) => { stdout += d.toString(); });
+    proc.stderr.on("data", (d: Buffer) => { stderr += d.toString(); });
 
     proc.on("close", (code) => {
       if (code === 0) {
@@ -115,6 +126,25 @@ function runYtDlp(args: string[]): Promise<{ stdout: string; stderr: string }> {
       reject(new Error(`Failed to spawn yt-dlp: ${err.message}`));
     });
   });
+}
+
+async function runYtDlp(args: string[]): Promise<{ stdout: string; stderr: string }> {
+  let lastError: Error = new Error("Unknown error");
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    try {
+      return await spawnYtDlp(args);
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      if (attempt < RETRY_DELAYS_MS.length && isRetryableError(lastError.message)) {
+        const delay = RETRY_DELAYS_MS[attempt];
+        console.warn(`[yt-dlp] Rate-limited (attempt ${attempt + 1}), retrying in ${delay / 1000}s…`);
+        await sleep(delay);
+        continue;
+      }
+      break;
+    }
+  }
+  throw lastError;
 }
 
 function sanitizeFilename(name: string): string {
