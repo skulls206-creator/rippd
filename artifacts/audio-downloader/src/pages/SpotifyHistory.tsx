@@ -4,10 +4,11 @@ import {
   Upload, Search, Download, Loader2, Check, AlertCircle,
   ChevronUp, ChevronDown, ChevronsUpDown, ArrowLeft,
   Music2, Users, Clock, ListMusic, FileJson, FileText,
-  Play, SkipForward,
+  Play, SkipForward, ExternalLink,
 } from "lucide-react";
 import { Link } from "wouter";
 import { Header } from "@/components/Header";
+import { searchDownloadAudio } from "@workspace/api-client-react";
 
 interface SpotifyTrack {
   key: string;
@@ -38,42 +39,29 @@ function fmtHours(ms: number): string {
   return (ms / 3600000).toFixed(1);
 }
 
-async function ripTrack(query: string): Promise<{ token: string; filename: string }> {
-  const res = await fetch("/api/download/search-audio", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Download failed");
-
-  const fileRes = await fetch(`/api/download/file/${data.token}`);
+async function ripAndSave(query: string): Promise<void> {
+  const result = await searchDownloadAudio({ query });
+  const fileRes = await fetch(`/api/download/file/${result.token}`);
   if (!fileRes.ok) throw new Error("File expired");
   const blob = await fileRes.blob();
   const blobUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = blobUrl;
-  a.download = data.filename;
+  a.download = result.filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-  return { token: data.token, filename: data.filename };
 }
 
 function parseSpotifyFiles(files: File[]): Promise<SpotifyTrack[]> {
-  return new Promise((resolve, reject) => {
-    const allEntries: SpotifyTrack[] = [];
+  return new Promise((resolve) => {
     let remaining = files.length;
-
     if (remaining === 0) { resolve([]); return; }
 
     const aggregated = new Map<string, SpotifyTrack>();
 
-    const finish = () => {
-      const deduped = Array.from(aggregated.values());
-      resolve(deduped);
-    };
+    const finish = () => resolve(Array.from(aggregated.values()));
 
     for (const file of files) {
       const reader = new FileReader();
@@ -120,6 +108,7 @@ function parseSpotifyFiles(files: File[]): Promise<SpotifyTrack[]> {
             }
           }
         } catch {
+          // skip malformed entries
         }
         remaining--;
         if (remaining === 0) finish();
@@ -130,7 +119,6 @@ function parseSpotifyFiles(files: File[]): Promise<SpotifyTrack[]> {
       };
       reader.readAsText(file);
     }
-    void allEntries;
   });
 }
 
@@ -139,6 +127,28 @@ function SortIcon({ col, active, dir }: { col: string; active: boolean; dir: Sor
   return dir === "asc"
     ? <ChevronUp className="w-3 h-3" />
     : <ChevronDown className="w-3 h-3" />;
+}
+
+function SpotifyUriCell({ uri }: { uri: string | null }) {
+  if (!uri) return <span className="text-muted-foreground/40">—</span>;
+  const trackId = uri.startsWith("spotify:track:") ? uri.slice("spotify:track:".length) : null;
+  const url = trackId ? `https://open.spotify.com/track/${trackId}` : null;
+  return (
+    <span
+      className="flex items-center gap-1 text-[10px] font-mono truncate max-w-[80px]"
+      style={{ color: "hsl(141 72% 48%)" }}
+      title={uri}
+    >
+      {url ? (
+        <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:opacity-70 transition-opacity">
+          <ExternalLink className="w-3 h-3 flex-shrink-0" />
+          <span className="truncate">{trackId?.slice(0, 8)}…</span>
+        </a>
+      ) : (
+        <span className="truncate">{uri.slice(0, 12)}…</span>
+      )}
+    </span>
+  );
 }
 
 export default function SpotifyHistory() {
@@ -153,6 +163,7 @@ export default function SpotifyHistory() {
   const [page, setPage] = useState(1);
   const [isQueueRunning, setIsQueueRunning] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef2 = useRef<HTMLInputElement>(null);
   const queueRef = useRef<SpotifyTrack[]>([]);
   const runningRef = useRef(false);
 
@@ -191,7 +202,11 @@ export default function SpotifyHistory() {
   const filtered = tracks.filter((t) => {
     if (!search) return true;
     const q = search.toLowerCase();
-    return t.track.toLowerCase().includes(q) || t.artist.toLowerCase().includes(q) || t.album.toLowerCase().includes(q);
+    return (
+      t.track.toLowerCase().includes(q) ||
+      t.artist.toLowerCase().includes(q) ||
+      t.album.toLowerCase().includes(q)
+    );
   });
 
   const sorted = [...filtered].sort((a, b) => {
@@ -229,7 +244,7 @@ export default function SpotifyHistory() {
       const track = queueRef.current.shift()!;
       setStatuses((prev) => ({ ...prev, [track.key]: "downloading" }));
       try {
-        await ripTrack(track.ytSearchQuery);
+        await ripAndSave(track.ytSearchQuery);
         setStatuses((prev) => ({ ...prev, [track.key]: "done" }));
       } catch {
         setStatuses((prev) => ({ ...prev, [track.key]: "error" }));
@@ -317,6 +332,8 @@ export default function SpotifyHistory() {
   const queuedCount = Object.values(statuses).filter((s) => s === "queued" || s === "downloading").length;
   const doneCount = Object.values(statuses).filter((s) => s === "done").length;
 
+  const COLS = "1.6fr 0.9fr 0.9fr 52px 56px 90px 80px";
+
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
       <div
@@ -347,7 +364,7 @@ export default function SpotifyHistory() {
 
         <AnimatePresence mode="wait">
 
-          {/* ── DROP ZONE (no tracks yet) ── */}
+          {/* ── DROP ZONE ── */}
           {tracks.length === 0 && (
             <motion.div
               key="dropzone"
@@ -416,7 +433,7 @@ export default function SpotifyHistory() {
                 </motion.div>
               )}
 
-              {/* How to get the file */}
+              {/* Instructions */}
               <div
                 className="w-full max-w-lg rounded-2xl p-5 space-y-3"
                 style={{ background: "hsl(var(--card) / 0.5)", border: "1px solid hsl(var(--border))" }}
@@ -482,8 +499,7 @@ export default function SpotifyHistory() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={queueAll}
-                  disabled={isQueueRunning && queuedCount === 0}
-                  className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
+                  className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold transition-all"
                   style={{
                     background: "hsl(var(--primary) / 0.15)",
                     border: "1px solid hsl(var(--primary) / 0.3)",
@@ -492,7 +508,7 @@ export default function SpotifyHistory() {
                 >
                   <SkipForward className="w-3.5 h-3.5" />
                   Queue {search ? "Filtered" : "All"}
-                  {queuedCount > 0 && <span className="ml-1 opacity-70">({queuedCount} queued)</span>}
+                  {queuedCount > 0 && <span className="ml-1 opacity-70">({queuedCount})</span>}
                 </motion.button>
 
                 {/* Export JSON */}
@@ -525,7 +541,7 @@ export default function SpotifyHistory() {
 
                 {/* Load more files */}
                 <button
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => fileInputRef2.current?.click()}
                   className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold transition-all hover:opacity-80"
                   style={{
                     background: "hsl(var(--secondary))",
@@ -537,7 +553,7 @@ export default function SpotifyHistory() {
                   More files
                 </button>
                 <input
-                  ref={fileInputRef}
+                  ref={fileInputRef2}
                   type="file"
                   accept=".json,application/json"
                   multiple
@@ -571,7 +587,7 @@ export default function SpotifyHistory() {
                 <div
                   className="grid text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-4 py-2.5"
                   style={{
-                    gridTemplateColumns: "1.8fr 1fr 1fr 60px 64px 80px",
+                    gridTemplateColumns: COLS,
                     background: "hsl(var(--card) / 0.8)",
                     borderBottom: "1px solid hsl(var(--border))",
                   }}
@@ -586,6 +602,7 @@ export default function SpotifyHistory() {
                       <SortIcon col={col} active={sortCol === col} dir={sortDir} />
                     </button>
                   ))}
+                  <span>URI</span>
                   <span>Action</span>
                 </div>
 
@@ -609,18 +626,26 @@ export default function SpotifyHistory() {
                       <div
                         key={t.key}
                         className="grid px-4 py-2.5 text-xs items-center transition-colors hover:bg-white/[0.02]"
-                        style={{ gridTemplateColumns: "1.8fr 1fr 1fr 60px 64px 80px" }}
+                        style={{ gridTemplateColumns: COLS }}
                       >
+                        {/* Track */}
                         <div className="flex items-center gap-2 min-w-0 pr-2">
                           <StatusIcon k={t.key} />
                           <span className={`truncate ${s === "done" ? "text-muted-foreground" : "text-white"}`}>
                             {t.track}
                           </span>
                         </div>
+                        {/* Artist */}
                         <span className="text-muted-foreground truncate pr-2">{t.artist}</span>
+                        {/* Album */}
                         <span className="text-muted-foreground truncate pr-2 hidden sm:block">{t.album || "—"}</span>
+                        {/* Plays */}
                         <span className="text-muted-foreground">{t.plays}</span>
+                        {/* Time */}
                         <span className="text-muted-foreground">{fmtTime(t.msPlayed)}</span>
+                        {/* Spotify URI */}
+                        <SpotifyUriCell uri={t.spotifyUri} />
+                        {/* Action */}
                         <div>
                           {s === "idle" || s === "error" ? (
                             <motion.button
@@ -672,9 +697,7 @@ export default function SpotifyHistory() {
                       >
                         ←
                       </button>
-                      <span className="px-2">
-                        {page} / {totalPages}
-                      </span>
+                      <span className="px-2">{page} / {totalPages}</span>
                       <button
                         onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                         disabled={page === totalPages}
