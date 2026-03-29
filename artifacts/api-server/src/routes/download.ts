@@ -286,6 +286,70 @@ router.post("/download/playlist-info", async (req, res) => {
   }
 });
 
+router.post("/download/search-audio", async (req, res) => {
+  const { query } = req.body as { query?: string };
+
+  if (!query || typeof query !== "string" || !query.trim()) {
+    res.status(400).json({ error: "A search query is required" });
+    return;
+  }
+
+  const sanitized = query
+    .trim()
+    .replace(/"/g, "")
+    .replace(/[<>|&;$`\\]/g, "")
+    .slice(0, 200);
+
+  if (!sanitized) {
+    res.status(400).json({ error: "Invalid search query" });
+    return;
+  }
+
+  try {
+    await ensureTempDir();
+
+    const fileId = crypto.randomBytes(16).toString("hex");
+    const outputTemplate = join(TEMP_DIR, `${fileId}.%(ext)s`);
+    const searchTarget = `ytsearch1:${sanitized}`;
+
+    const { stdout } = await runYtDlp([
+      "--no-playlist",
+      "--extract-audio",
+      "--audio-format",
+      "mp3",
+      "--audio-quality",
+      "0",
+      "--output",
+      outputTemplate,
+      "--print",
+      "after_move:%(title)s",
+      searchTarget,
+    ]);
+
+    const title = parseTitle(stdout);
+    const outputPath = await findOutputFile(fileId);
+
+    if (!outputPath) {
+      throw new Error("Audio file not found after search download.");
+    }
+
+    const token = crypto.randomBytes(24).toString("hex");
+    const filename = `${sanitizeFilename(title)}.mp3`;
+
+    downloadTokens.set(token, {
+      filePath: outputPath,
+      filename,
+      title,
+      createdAt: Date.now(),
+    });
+
+    res.json({ token, title, filename });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Search download failed";
+    res.status(500).json({ error: message.split("\n")[0].slice(0, 300) });
+  }
+});
+
 router.get("/download/file/:token", async (req, res) => {
   const { token } = req.params;
   const info = downloadTokens.get(token);

@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ContextMenu } from "@/components/ContextMenu";
 import Home from "@/pages/Home";
+import SpotifyHistory from "@/pages/SpotifyHistory";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -19,6 +20,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/spotify-history" component={SpotifyHistory} />
       <Route component={NotFound} />
     </Switch>
   );

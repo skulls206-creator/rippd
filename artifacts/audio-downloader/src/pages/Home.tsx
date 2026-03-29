@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, Music2, RotateCcw, AlertCircle, Sparkles, Loader2, ShieldAlert, ExternalLink, ClipboardPaste } from "lucide-react";
+import { Download, Music2, RotateCcw, AlertCircle, Sparkles, Loader2, ShieldAlert, ExternalLink, ClipboardPaste, History } from "lucide-react";
+import { Link } from "wouter";
 import {
   useDownloadAudio,
   useGetPlaylistInfo,
@@ -299,6 +300,19 @@ export default function Home() {
                     For personal use only &bull; Files expire after 15 minutes
                   </p>
                 </form>
+
+                <Link
+                  href="/spotify-history"
+                  className="flex items-center justify-center gap-2 w-full h-10 rounded-2xl text-xs font-semibold transition-all duration-200 hover:opacity-80"
+                  style={{
+                    background: "hsl(141 72% 42% / 0.10)",
+                    border: "1px solid hsl(141 72% 42% / 0.22)",
+                    color: "hsl(141 72% 52%)",
+                  }}
+                >
+                  <History className="w-3.5 h-3.5" />
+                  Import Spotify History
+                </Link>
               </motion.div>
             )}
 
