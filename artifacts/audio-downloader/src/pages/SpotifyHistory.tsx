@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { Header } from "@/components/Header";
-import { searchDownloadAudio } from "@workspace/api-client-react";
+import { useSearchDownloadAudio } from "@workspace/api-client-react";
 
 interface SpotifyTrack {
   key: string;
@@ -39,15 +39,14 @@ function fmtHours(ms: number): string {
   return (ms / 3600000).toFixed(1);
 }
 
-async function ripAndSave(query: string): Promise<void> {
-  const result = await searchDownloadAudio({ query });
-  const fileRes = await fetch(`/api/download/file/${result.token}`);
+async function saveBlob(token: string, filename: string): Promise<void> {
+  const fileRes = await fetch(`/api/download/file/${token}`);
   if (!fileRes.ok) throw new Error("File expired");
   const blob = await fileRes.blob();
   const blobUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = blobUrl;
-  a.download = result.filename;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -167,6 +166,10 @@ export default function SpotifyHistory() {
   const queueRef = useRef<SpotifyTrack[]>([]);
   const runningRef = useRef(false);
 
+  const { mutateAsync: searchMutate } = useSearchDownloadAudio();
+  const searchMutateRef = useRef(searchMutate);
+  searchMutateRef.current = searchMutate;
+
   const handleFiles = async (files: FileList | File[]) => {
     const arr = Array.from(files).filter(
       (f) => f.name.endsWith(".json") || f.type === "application/json"
@@ -182,8 +185,23 @@ export default function SpotifyHistory() {
       if (parsed.length === 0) {
         setParseError("No tracks found. Make sure you're dropping Spotify streaming history JSON files.");
       } else {
-        setTracks(parsed);
-        setStatuses({});
+        setTracks((prev) => {
+          if (prev.length === 0) return parsed;
+          const merged = new Map(prev.map((t) => [t.key, t]));
+          for (const t of parsed) {
+            if (merged.has(t.key)) {
+              const existing = merged.get(t.key)!;
+              merged.set(t.key, {
+                ...existing,
+                plays: existing.plays + t.plays,
+                msPlayed: existing.msPlayed + t.msPlayed,
+              });
+            } else {
+              merged.set(t.key, t);
+            }
+          }
+          return Array.from(merged.values());
+        });
         setPage(1);
       }
     } catch {
@@ -244,7 +262,8 @@ export default function SpotifyHistory() {
       const track = queueRef.current.shift()!;
       setStatuses((prev) => ({ ...prev, [track.key]: "downloading" }));
       try {
-        await ripAndSave(track.ytSearchQuery);
+        const result = await searchMutateRef.current({ data: { query: track.ytSearchQuery } });
+        await saveBlob(result.token, result.filename);
         setStatuses((prev) => ({ ...prev, [track.key]: "done" }));
       } catch {
         setStatuses((prev) => ({ ...prev, [track.key]: "error" }));
