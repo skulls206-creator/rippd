@@ -18,7 +18,8 @@ export function Header() {
           <img
             src={`${import.meta.env.BASE_URL}logo.png`}
             alt="RIPPD logo"
-            className="w-8 h-8 object-contain relative z-10"
+            className="w-8 h-8 object-cover relative z-10 rounded-lg"
+            style={{ background: "#0A0212" }}
           />
         </div>
         <span className="font-display font-bold text-xl tracking-wider" style={{ color: "hsl(var(--foreground))" }}>
