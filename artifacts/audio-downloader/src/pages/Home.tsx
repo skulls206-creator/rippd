@@ -32,6 +32,9 @@ function looksLikePlaylist(url: string): boolean {
     const u = new URL(url);
     const host = u.hostname.toLowerCase().replace(/^www\./, "");
     if (["youtube.com", "m.youtube.com", "music.youtube.com"].includes(host)) {
+      // If a specific video ID is present (v=), the user wants that track —
+      // don't enter playlist mode even if list= is also in the URL.
+      if (u.searchParams.has("v")) return false;
       return u.searchParams.has("list");
     }
     if (host === "soundcloud.com" || host === "m.soundcloud.com") {
