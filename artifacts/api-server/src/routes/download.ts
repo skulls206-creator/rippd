@@ -89,6 +89,9 @@ const BASE_YTDLP_ARGS = [
   "--js-runtimes", "node",
   "--remote-components", "ejs:github",
   "--sleep-requests", "1",
+  // Use mobile player clients — they bypass YouTube 429 rate limits
+  // that hit the default web client on shared server IPs.
+  "--extractor-args", "youtube:player_client=android,ios",
 ];
 
 const RETRY_DELAYS_MS = [4000, 8000, 16000];
