@@ -12,6 +12,7 @@ import { Header } from "@/components/Header";
 import { SearchBar } from "@/components/SearchBar";
 import { AudioWave } from "@/components/AudioWave";
 import { PlaylistView } from "@/components/PlaylistView";
+import { apiUrl } from "@/lib/api-url";
 
 const LOADING_TEXTS = [
   "Fetching track info...",
@@ -166,7 +167,7 @@ export default function Home() {
     if (isSaving) return;
     setIsSaving(true);
     try {
-      const res = await fetch(`/api/download/file/${token}`);
+      const res = await fetch(apiUrl(`/api/download/file/${token}`));
       if (!res.ok) throw new Error("File expired or unavailable.");
       const blob = await res.blob();
       const blobUrl = URL.createObjectURL(blob);

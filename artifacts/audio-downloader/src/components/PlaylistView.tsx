@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Download, ArrowLeft, Music2, Loader2, AlertCircle, ListMusic } from "lucide-react";
 import type { PlaylistInfo, PlaylistTrack } from "@workspace/api-client-react";
+import { apiUrl } from "@/lib/api-url";
 
 type TrackStatus = "idle" | "queued" | "downloading" | "done" | "error";
 
@@ -18,7 +19,7 @@ function formatDuration(seconds: number | null | undefined): string {
 }
 
 async function downloadTrack(track: PlaylistTrack): Promise<void> {
-  const res = await fetch("/api/download/audio", {
+  const res = await fetch(apiUrl("/api/download/audio"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url: track.url }),
@@ -26,7 +27,7 @@ async function downloadTrack(track: PlaylistTrack): Promise<void> {
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Download failed");
 
-  const fileRes = await fetch(`/api/download/file/${data.token}`);
+  const fileRes = await fetch(apiUrl(`/api/download/file/${data.token}`));
   if (!fileRes.ok) throw new Error("File expired");
   const blob = await fileRes.blob();
   const blobUrl = URL.createObjectURL(blob);

@@ -9,6 +9,7 @@ import {
 import { Link } from "wouter";
 import { Header } from "@/components/Header";
 import { useSearchDownloadAudio } from "@workspace/api-client-react";
+import { apiUrl } from "@/lib/api-url";
 
 interface SpotifyTrack {
   key: string;
@@ -40,7 +41,7 @@ function fmtHours(ms: number): string {
 }
 
 async function saveBlob(token: string, filename: string): Promise<void> {
-  const fileRes = await fetch(`/api/download/file/${token}`);
+  const fileRes = await fetch(apiUrl(`/api/download/file/${token}`));
   if (!fileRes.ok) throw new Error("File expired");
   const blob = await fileRes.blob();
   const blobUrl = URL.createObjectURL(blob);
