@@ -132,3 +132,11 @@ user downloads as MP3.
 - If your change should ship to users, push to `main` on GitHub
   (with `GITHUB_PAT` if any `.github/workflows/*` files changed). The Pages
   deploy is automatic; the API redeploys when the user clicks Publish.
+- **Append an entry to `AGENT_LOG.md`** (newest on top) so the next agent can
+  see what you did and why. Format is in that file's header.
+
+## Before you start a task
+
+- Read the top ~5 entries of `AGENT_LOG.md` first. If something there
+  conflicts with what you're about to do, surface it to the user before
+  changing code.
