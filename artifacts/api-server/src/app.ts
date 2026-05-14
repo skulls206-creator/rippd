@@ -3,6 +3,7 @@ import cors, { type CorsOptions } from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { apiRateLimiter } from "./middlewares/rateLimit";
 
 const app: Express = express();
 
@@ -73,6 +74,18 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api", router);
+const trustProxyEnv = process.env.TRUST_PROXY;
+if (trustProxyEnv !== undefined && trustProxyEnv !== "") {
+  const asNumber = Number(trustProxyEnv);
+  if (Number.isInteger(asNumber) && asNumber >= 0) {
+    app.set("trust proxy", asNumber);
+  } else if (trustProxyEnv === "true" || trustProxyEnv === "false") {
+    app.set("trust proxy", trustProxyEnv === "true");
+  } else {
+    app.set("trust proxy", trustProxyEnv);
+  }
+}
+
+app.use("/api", apiRateLimiter, router);
 
 export default app;
