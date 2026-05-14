@@ -6,12 +6,20 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
-const DEFAULT_CORS_ORIGINS = [
+const PRODUCTION_DEFAULT_ORIGINS = [
   "https://skulls206-creator.github.io",
-  "http://localhost",
-  "/^http:\\/\\/localhost(:\\d+)?$/",
   "/^https?:\\/\\/.*\\.replit\\.dev$/",
-].join(",");
+];
+
+const DEV_ONLY_ORIGINS = [
+  "/^http:\\/\\/localhost(:\\d+)?$/",
+];
+
+const DEFAULT_CORS_ORIGINS = (
+  process.env.NODE_ENV === "production"
+    ? PRODUCTION_DEFAULT_ORIGINS
+    : [...PRODUCTION_DEFAULT_ORIGINS, ...DEV_ONLY_ORIGINS]
+).join(",");
 
 function parseOriginEntry(entry: string): string | RegExp | null {
   const trimmed = entry.trim();
