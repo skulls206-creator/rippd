@@ -57,6 +57,8 @@ Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` 
 
 - Entry: `src/index.ts` — reads `PORT`, starts Express
 - App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
+- Environment variables:
+  - `CORS_ALLOWED_ORIGINS` — comma-separated list of allowed CORS origins. Entries wrapped in slashes (e.g. `/^https?:\/\/.*\.replit\.dev$/`) are parsed as regex; everything else is treated as a literal origin string. Defaults cover local development, the GitHub Pages frontend (`https://skulls206-creator.github.io`), and Replit dev domains (`*.replit.dev`). For production, set this to the comma-separated list of frontend origins that should be allowed to call the API (e.g. `https://skulls206-creator.github.io,https://your-custom-domain.com`).
 - Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
 - Depends on: `@workspace/db`, `@workspace/api-zod`
 - `pnpm --filter @workspace/api-server run dev` — run the dev server

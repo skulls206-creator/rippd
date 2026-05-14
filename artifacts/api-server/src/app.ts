@@ -1,10 +1,46 @@
 import express, { type Express } from "express";
-import cors from "cors";
+import cors, { type CorsOptions } from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
 const app: Express = express();
+
+const DEFAULT_CORS_ORIGINS = [
+  "https://skulls206-creator.github.io",
+  "http://localhost",
+  "/^http:\\/\\/localhost(:\\d+)?$/",
+  "/^https?:\\/\\/.*\\.replit\\.dev$/",
+].join(",");
+
+function parseOriginEntry(entry: string): string | RegExp | null {
+  const trimmed = entry.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("/") && trimmed.lastIndexOf("/") > 0) {
+    const lastSlash = trimmed.lastIndexOf("/");
+    const pattern = trimmed.slice(1, lastSlash);
+    const flags = trimmed.slice(lastSlash + 1);
+    try {
+      return new RegExp(pattern, flags);
+    } catch {
+      logger.warn({ entry: trimmed }, "Invalid CORS regex origin, ignoring");
+      return null;
+    }
+  }
+  return trimmed;
+}
+
+const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS ?? DEFAULT_CORS_ORIGINS)
+  .split(",")
+  .map(parseOriginEntry)
+  .filter((v): v is string | RegExp => v !== null);
+
+const corsOptions: CorsOptions = {
+  origin: allowedOrigins,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+};
 
 app.use(
   pinoHttp({
@@ -25,18 +61,7 @@ app.use(
     },
   }),
 );
-app.use(
-  cors({
-    origin: [
-      "https://skulls206-creator.github.io",
-      /^http:\/\/localhost(:\d+)?$/,
-      /^https?:\/\/.*\.replit\.dev$/,
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  }),
-);
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
