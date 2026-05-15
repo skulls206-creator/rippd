@@ -20,8 +20,8 @@ export function PremiumButton({
 
   const variants = {
     primary:
-      "bg-gradient-to-r from-primary to-accent text-white shadow-[0_0_20px_rgba(192,38,211,0.25)] hover:shadow-[0_0_30px_rgba(192,38,211,0.4)] border border-white/10",
-    secondary: "bg-white/10 text-white hover:bg-white/20 border border-white/5",
+      "bg-gradient-to-r from-primary to-accent text-white shadow-[0_0_20px_rgba(192,38,211,0.25)] hover:shadow-[0_0_30px_rgba(192,38,211,0.4)] border-glass-border",
+    secondary: "bg-glass-bg-hover text-foreground hover:bg-glass-bg-active border-glass-border-light",
     outline: "bg-transparent border-2 border-primary text-primary hover:bg-primary/10",
   };
 

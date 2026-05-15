@@ -51,7 +51,7 @@ async function saveBlob(token: string, filename: string): Promise<void> {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 500);
 }
 
 function parseSpotifyFiles(files: File[]): Promise<SpotifyTrack[]> {
@@ -375,12 +375,12 @@ export default function SpotifyHistory() {
         <div className="flex items-center gap-3 mb-6">
           <Link
             href="/"
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-muted-foreground hover:text-white transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-glass-bg-hover text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-white">Spotify History</h1>
+            <h1 className="text-xl font-bold text-foreground">Spotify History</h1>
             <p className="text-xs text-muted-foreground">Import your streaming history and rip anything to MP3</p>
           </div>
         </div>
@@ -417,7 +417,7 @@ export default function SpotifyHistory() {
                   }
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-semibold text-white mb-1">
+                  <p className="text-sm font-semibold text-foreground mb-1">
                     {isParsing ? "Reading files…" : "Drop your Spotify history files"}
                   </p>
                   <p className="text-xs text-muted-foreground leading-relaxed max-w-xs">
@@ -463,8 +463,8 @@ export default function SpotifyHistory() {
               >
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">How to export from Spotify</p>
                 <ol className="space-y-1.5 text-xs text-muted-foreground list-decimal list-inside leading-relaxed">
-                  <li>Go to <strong className="text-white">spotify.com → Account → Privacy settings</strong></li>
-                  <li>Click <strong className="text-white">Request data download</strong> (Extended streaming history)</li>
+                  <li>Go to <strong className="text-foreground">spotify.com → Account → Privacy settings</strong></li>
+                  <li>Click <strong className="text-foreground">Request data download</strong> (Extended streaming history)</li>
                   <li>Wait for the email (up to 30 days) then download the ZIP</li>
                   <li>Extract and drop the <code className="text-primary">Streaming_History_Audio_*.json</code> files here</li>
                 </ol>
@@ -494,7 +494,7 @@ export default function SpotifyHistory() {
                     style={{ background: "hsl(var(--card) / 0.6)", border: "1px solid hsl(var(--border))" }}
                   >
                     <div className="flex items-center gap-1.5 text-primary">{s.icon}</div>
-                    <p className="text-lg font-bold text-white">{s.value}</p>
+                    <p className="text-lg font-bold text-foreground">{s.value}</p>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{s.label}</p>
                   </div>
                 ))}
@@ -513,7 +513,7 @@ export default function SpotifyHistory() {
                     placeholder="Search tracks or artists…"
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                    className="flex-1 bg-transparent text-xs text-white placeholder-muted-foreground outline-none min-w-0"
+                    className="flex-1 bg-transparent text-xs text-foreground placeholder-muted-foreground outline-none min-w-0"
                   />
                 </div>
 
@@ -619,7 +619,7 @@ export default function SpotifyHistory() {
                     <button
                       key={col}
                       onClick={() => handleSort(col)}
-                      className="flex items-center gap-1 hover:text-white transition-colors text-left"
+                      className="flex items-center gap-1 hover:text-foreground transition-colors text-left"
                     >
                       {col === "msPlayed" ? "Time" : col.charAt(0).toUpperCase() + col.slice(1)}
                       <SortIcon col={col} active={sortCol === col} dir={sortDir} />
@@ -648,13 +648,13 @@ export default function SpotifyHistory() {
                     return (
                       <div
                         key={t.key}
-                        className="grid px-4 py-2.5 text-xs items-center transition-colors hover:bg-white/[0.02]"
+                        className="grid px-4 py-2.5 text-xs items-center transition-colors hover:bg-glass-bg-subtle"
                         style={{ gridTemplateColumns: COLS }}
                       >
                         {/* Track */}
                         <div className="flex items-center gap-2 min-w-0 pr-2">
                           <StatusIcon k={t.key} />
-                          <span className={`truncate ${s === "done" ? "text-muted-foreground" : "text-white"}`}>
+                          <span className={`truncate ${s === "done" ? "text-muted-foreground" : "text-foreground"}`}>
                             {t.track}
                           </span>
                         </div>
@@ -716,7 +716,7 @@ export default function SpotifyHistory() {
                       <button
                         onClick={() => setPage((p) => Math.max(1, p - 1))}
                         disabled={page === 1}
-                        className="px-2.5 py-1 rounded-lg hover:bg-white/8 disabled:opacity-30 transition-colors"
+                        className="px-2.5 py-1 rounded-lg hover:bg-glass-bg-raised disabled:opacity-30 transition-colors"
                       >
                         ←
                       </button>
@@ -724,7 +724,7 @@ export default function SpotifyHistory() {
                       <button
                         onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                         disabled={page === totalPages}
-                        className="px-2.5 py-1 rounded-lg hover:bg-white/8 disabled:opacity-30 transition-colors"
+                        className="px-2.5 py-1 rounded-lg hover:bg-glass-bg-raised disabled:opacity-30 transition-colors"
                       >
                         →
                       </button>

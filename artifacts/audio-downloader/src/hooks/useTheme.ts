@@ -21,12 +21,6 @@ export function useTheme() {
     applyTheme(theme);
   }, [theme]);
 
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    const initial = themes.find((t) => t.id === saved) ?? DEFAULT_THEME;
-    applyTheme(initial);
-  }, []);
-
   const setTheme = (t: Theme) => {
     localStorage.setItem(STORAGE_KEY, t.id);
     setThemeState(t);

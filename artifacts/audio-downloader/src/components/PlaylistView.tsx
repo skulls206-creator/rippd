@@ -37,7 +37,7 @@ async function downloadTrack(track: PlaylistTrack): Promise<void> {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 500);
 }
 
 export function PlaylistView({ playlist, onBack }: PlaylistViewProps) {
@@ -113,15 +113,15 @@ export function PlaylistView({ playlist, onBack }: PlaylistViewProps) {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl"
+      className="flex flex-col overflow-hidden rounded-2xl border-glass-border bg-glass-bg-subtle backdrop-blur-xl"
       style={{ maxHeight: "72vh" }}
     >
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-white/8 flex-shrink-0">
+      <div className="flex items-center gap-3 p-4 border-b border-glass-border-light flex-shrink-0">
         <button
           onClick={onBack}
           disabled={isRunning}
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-muted-foreground hover:text-white transition-colors disabled:opacity-40"
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-glass-bg-hover text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -129,7 +129,7 @@ export function PlaylistView({ playlist, onBack }: PlaylistViewProps) {
           <p className="text-xs text-muted-foreground mb-0.5 flex items-center gap-1">
             <ListMusic className="w-3 h-3" /> Playlist
           </p>
-          <h2 className="text-sm font-semibold text-white truncate">{playlist.title}</h2>
+          <h2 className="text-sm font-semibold text-foreground truncate">{playlist.title}</h2>
         </div>
         <span className="text-xs text-muted-foreground flex-shrink-0">
           {playlist.trackCount} tracks
@@ -137,14 +137,14 @@ export function PlaylistView({ playlist, onBack }: PlaylistViewProps) {
       </div>
 
       {/* Select all row */}
-      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-white/5 flex-shrink-0">
+      <div className="flex items-center gap-3 px-4 py-2.5 border-b border-glass-border-light flex-shrink-0">
         <button
           onClick={toggleAll}
           disabled={isRunning}
           className={`w-4.5 h-4.5 rounded flex items-center justify-center border transition-colors disabled:opacity-50 flex-shrink-0 ${
             allSelected
               ? "bg-primary border-primary"
-              : "border-white/20 hover:border-primary/50"
+              : "border-glass-border-strong hover:border-primary/50"
           }`}
           style={{ width: 18, height: 18 }}
         >
@@ -162,7 +162,7 @@ export function PlaylistView({ playlist, onBack }: PlaylistViewProps) {
       </div>
 
       {/* Track list */}
-      <div className="flex-1 overflow-y-auto divide-y divide-white/5">
+      <div className="flex-1 overflow-y-auto divide-y divide-glass-border-light">
         {playlist.tracks.map((track) => {
           const isSelected = selected.has(track.id);
           const status = statuses[track.id];
@@ -173,7 +173,7 @@ export function PlaylistView({ playlist, onBack }: PlaylistViewProps) {
               onClick={() => toggleTrack(track.id)}
               disabled={isRunning}
               className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors disabled:cursor-default ${
-                isSelected && !isRunning ? "bg-primary/5 hover:bg-primary/8" : "hover:bg-white/4"
+                isSelected && !isRunning ? "bg-primary/5 hover:bg-primary/8" : "hover:bg-glass-bg-subtle"
               }`}
             >
               {/* Checkbox or status */}
@@ -183,7 +183,7 @@ export function PlaylistView({ playlist, onBack }: PlaylistViewProps) {
                 ) : (
                   <div
                     className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                      isSelected ? "bg-primary border-primary" : "border-white/20"
+                      isSelected ? "bg-primary border-primary" : "border-glass-border-strong"
                     }`}
                   >
                     {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
@@ -197,7 +197,7 @@ export function PlaylistView({ playlist, onBack }: PlaylistViewProps) {
               </span>
 
               <div className="flex-1 min-w-0">
-                <p className={`text-sm truncate ${status === "done" ? "text-muted-foreground" : "text-white"}`}>
+                <p className={`text-sm truncate ${status === "done" ? "text-muted-foreground" : "text-foreground"}`}>
                   {track.title}
                 </p>
               </div>
@@ -220,7 +220,7 @@ export function PlaylistView({ playlist, onBack }: PlaylistViewProps) {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
-            className="p-3 border-t border-white/8 flex-shrink-0"
+            className="p-3 border-t border-glass-border-light flex-shrink-0"
           >
             <motion.button
               whileHover={{ scale: 1.01 }}
@@ -234,15 +234,15 @@ export function PlaylistView({ playlist, onBack }: PlaylistViewProps) {
           </motion.div>
         )}
         {isRunning && (
-          <div className="p-3 border-t border-white/8 flex-shrink-0">
-            <div className="w-full h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <div className="p-3 border-t border-glass-border-light flex-shrink-0">
+            <div className="w-full h-10 rounded-xl bg-glass-bg border-glass-border flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin text-primary" />
               Downloading {doneCount + 1} of {selectedCount}...
             </div>
           </div>
         )}
         {!isRunning && doneCount > 0 && selectedCount === 0 && (
-          <div className="p-3 border-t border-white/8 flex-shrink-0 text-center text-xs text-muted-foreground">
+          <div className="p-3 border-t border-glass-border-light flex-shrink-0 text-center text-xs text-muted-foreground">
             {doneCount} track{doneCount !== 1 ? "s" : ""} saved · Select more to download again
           </div>
         )}

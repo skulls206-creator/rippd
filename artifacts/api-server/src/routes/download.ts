@@ -67,7 +67,7 @@ function validateUrl(raw: string): URL {
     hostname === "::1" ||
     hostname.startsWith("192.168.") ||
     hostname.startsWith("10.") ||
-    hostname.startsWith("172.")
+    /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
   ) {
     throw new Error("Private or local addresses are not allowed.");
   }

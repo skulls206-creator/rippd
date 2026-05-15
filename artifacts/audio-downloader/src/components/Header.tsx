@@ -4,7 +4,7 @@ import { ThemePicker } from "./ThemePicker";
 export function Header() {
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center bg-background/60 backdrop-blur-md border-b border-white/5"
+      className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center bg-background/60 backdrop-blur-md border-b border-glass-border-light"
       style={{
         paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
         paddingBottom: "0.75rem",

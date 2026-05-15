@@ -98,13 +98,14 @@ Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHea
 
 React + Vite frontend for the Audio Downloader app. Served at `/` (root path).
 
-- Single-page app with dark music-themed design branded as "AUDIORIP"
+- Single-page app with dark music-themed design branded as "RIPPD"
 - URL input where users paste YouTube/SoundCloud links
 - Uses `useDownloadAudio` hook (generated from OpenAPI) to call `POST /api/download/audio`
 - Shows loading state with animated wave while yt-dlp extracts audio (can take 30-90s)
 - Success state shows track title + "Save MP3" direct download link (`GET /api/download/file/{token}`)
 - Error state shows error message + "Try Again"
 - Packages: framer-motion, lucide-react, clsx, tailwind-merge
+- Styling: 6 themes (Void/Arctic/Midnight/Sunset/Ocean/Emerald) via CSS custom properties in `src/lib/themes.ts`. Each theme provides HSL and glass-overlay CSS vars (`--glass-bg`, `--glass-border`, `--glass-text`, etc.). Tailwind `bg-glass-*`, `border-glass-*`, `text-glass-*` utilities are defined in `src/index.css`. Avoid `text-white/70` or `bg-white/5` hardcoded opacity classes in new components — use the glass CSS vars instead.
 
 ### `scripts` (`@workspace/scripts`)
 

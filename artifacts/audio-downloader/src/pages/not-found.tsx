@@ -19,7 +19,7 @@ export default function NotFound() {
         <h1 className="text-8xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-b from-white to-white/20 mb-6">
           404
         </h1>
-        <h2 className="text-2xl font-bold text-white mb-4">Track Not Found</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-4">Track Not Found</h2>
         <p className="text-muted-foreground mb-8">
           The page you're looking for has been removed or doesn't exist.
         </p>

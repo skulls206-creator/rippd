@@ -177,7 +177,7 @@ export default function Home() {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 500);
     } catch {
     } finally {
       setIsSaving(false);
@@ -215,7 +215,7 @@ export default function Home() {
                     <Sparkles className="w-3 h-3" />
                     YouTube · SoundCloud · Bandcamp · more
                   </div>
-                  <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight">
+                  <h1 className="text-4xl md:text-5xl font-extrabold text-foreground leading-tight">
                     Rip the audio.
                   </h1>
                   <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
@@ -338,7 +338,7 @@ export default function Home() {
                     key={loadingIdx}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-base font-semibold text-white"
+                    className="text-base font-semibold text-foreground"
                   >
                     {loadingTexts[loadingIdx]}
                   </motion.p>
@@ -364,7 +364,7 @@ export default function Home() {
                 key="success"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.05] backdrop-blur-xl p-6 space-y-5"
+                className="relative overflow-hidden rounded-2xl border-glass-border bg-glass-bg backdrop-blur-xl p-6 space-y-5"
               >
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-primary/15 blur-[80px] rounded-full pointer-events-none" />
 
@@ -374,7 +374,7 @@ export default function Home() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] font-bold text-primary tracking-widest uppercase mb-0.5">Ready to download</p>
-                    <h3 className="text-sm font-semibold text-white truncate" title={downloadData.title}>
+                    <h3 className="text-sm font-semibold text-foreground truncate" title={downloadData.title}>
                       {downloadData.title}
                     </h3>
                   </div>
@@ -398,7 +398,7 @@ export default function Home() {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={handleReset}
-                    className="flex items-center gap-1.5 px-4 h-10 rounded-xl bg-white/8 border border-white/10 text-white/70 hover:text-white hover:bg-white/12 text-sm font-medium transition-colors duration-200"
+                    className="flex items-center gap-1.5 px-4 h-10 rounded-xl bg-glass-bg-raised border-glass-border text-glass-text hover:text-foreground hover:bg-glass-bg-active text-sm font-medium transition-colors duration-200"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     New
@@ -420,7 +420,7 @@ export default function Home() {
                     <AlertCircle className="w-4 h-4 text-destructive" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white mb-1">
+                    <p className="text-sm font-semibold text-foreground mb-1">
                       {isPlaylist ? "Playlist load failed" : "Extraction failed"}
                     </p>
                     <p className="text-xs text-muted-foreground leading-relaxed">
@@ -432,7 +432,7 @@ export default function Home() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleReset}
-                  className="flex items-center gap-1.5 px-4 h-9 rounded-xl bg-white/8 border border-white/10 text-white/80 hover:text-white hover:bg-white/12 text-sm font-medium transition-colors duration-200"
+                  className="flex items-center gap-1.5 px-4 h-9 rounded-xl bg-glass-bg-raised border-glass-border text-glass-text hover:text-foreground hover:bg-glass-bg-active text-sm font-medium transition-colors duration-200"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   Try again

@@ -22,6 +22,18 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
 
+  --color-glass-bg: var(--glass-bg);
+  --color-glass-bg-subtle: var(--glass-bg-subtle);
+  --color-glass-bg-hover: var(--glass-bg-hover);
+  --color-glass-bg-raised: var(--glass-bg-raised);
+  --color-glass-bg-active: var(--glass-bg-active);
+  --color-glass-border: var(--glass-border);
+  --color-glass-border-light: var(--glass-border-light);
+  --color-glass-border-strong: var(--glass-border-strong);
+  --color-glass-text: var(--glass-text);
+  --color-glass-text-muted: var(--glass-text-muted);
+  --color-glass-text-dim: var(--glass-text-dim);
+
   --font-display: 'Syne', sans-serif;
   --font-body: 'Manrope', sans-serif;
   
@@ -63,6 +75,18 @@
   --radius: 1rem;
   --glow-opacity: 0.15;
   --glow-opacity-2: 0.1;
+
+  --glass-bg: rgba(255,255,255,0.05);
+  --glass-bg-subtle: rgba(255,255,255,0.04);
+  --glass-bg-raised: rgba(255,255,255,0.08);
+  --glass-bg-hover: rgba(255,255,255,0.10);
+  --glass-bg-active: rgba(255,255,255,0.12);
+  --glass-border: rgba(255,255,255,0.10);
+  --glass-border-light: rgba(255,255,255,0.05);
+  --glass-border-strong: rgba(255,255,255,0.20);
+  --glass-text: rgba(255,255,255,0.70);
+  --glass-text-muted: rgba(255,255,255,0.50);
+  --glass-text-dim: rgba(255,255,255,0.30);
 }
 
 @layer base {
@@ -96,7 +120,11 @@
 
 @layer utilities {
   .glass-panel {
-    @apply bg-white/5 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)];
+    background: var(--glass-bg);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3);
   }
   
   .text-glow {
@@ -111,58 +139,25 @@
 }
 
 /* ── Arctic (light) theme overrides ───────────────────────────────────── */
-html[data-theme="arctic"] .glass-panel {
-  background: rgba(255, 255, 255, 0.72) !important;
-  border-color: rgba(0, 0, 0, 0.07) !important;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.07) !important;
+html[data-theme="arctic"] {
+  --glass-bg: rgba(255,255,255,0.72);
+  --glass-bg-subtle: rgba(255,255,255,0.70);
+  --glass-bg-raised: rgba(255,255,255,0.82);
+  --glass-bg-hover: rgba(0,0,0,0.06);
+  --glass-bg-active: rgba(0,0,0,0.10);
+  --glass-border: rgba(0,0,0,0.07);
+  --glass-border-light: rgba(0,0,0,0.05);
+  --glass-border-strong: rgba(0,0,0,0.15);
+  --glass-text: rgba(0,0,0,0.65);
+  --glass-text-muted: rgba(0,0,0,0.45);
+  --glass-text-dim: rgba(0,0,0,0.30);
 }
 
-/* Header border */
 html[data-theme="arctic"] header {
-  border-bottom-color: rgba(0, 0, 0, 0.06) !important;
-  background: hsl(var(--background) / 0.75) !important;
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+  background: hsl(var(--background) / 0.75);
 }
 
-/* Inner card panels that use inline bg-white/[0.04-0.08] */
-html[data-theme="arctic"] [class*="bg-white/"] {
-  background: rgba(255, 255, 255, 0.82) !important;
-  border-color: rgba(0, 0, 0, 0.07) !important;
-}
-
-/* SearchBar input area */
-html[data-theme="arctic"] input {
-  color: hsl(var(--foreground)) !important;
-}
 html[data-theme="arctic"] input::placeholder {
-  color: hsl(var(--muted-foreground)) !important;
-}
-
-/* Footer / subtle text */
-html[data-theme="arctic"] .text-white\/30 {
-  color: rgba(0, 0, 0, 0.3) !important;
-}
-html[data-theme="arctic"] .text-white\/50 {
-  color: rgba(0, 0, 0, 0.45) !important;
-}
-html[data-theme="arctic"] .text-white\/60 {
-  color: rgba(0, 0, 0, 0.55) !important;
-}
-html[data-theme="arctic"] .text-white\/70 {
-  color: rgba(0, 0, 0, 0.65) !important;
-}
-html[data-theme="arctic"] .text-white\/80 {
-  color: rgba(0, 0, 0, 0.78) !important;
-}
-html[data-theme="arctic"] .text-white {
-  color: hsl(var(--foreground)) !important;
-}
-
-/* Borders that use border-white/* */
-html[data-theme="arctic"] [class*="border-white/"] {
-  border-color: rgba(0, 0, 0, 0.08) !important;
-}
-
-/* Hover / active states with bg-white/* */
-html[data-theme="arctic"] [class*="hover:bg-white"] {
-  --tw-bg-opacity: 1;
+  color: hsl(var(--muted-foreground));
 }

@@ -28,8 +28,8 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       <div
         className={cn(
           "relative flex items-center w-full group",
-          "bg-white/[0.06] border border-white/10 rounded-2xl",
-          "focus-within:border-primary/50 focus-within:bg-white/[0.08]",
+          "bg-glass-bg border-glass-border rounded-2xl",
+          "focus-within:border-primary/50 focus-within:bg-glass-bg-raised",
           "transition-all duration-300 shadow-[0_4px_24px_rgba(0,0,0,0.3)]",
           className
         )}
@@ -59,7 +59,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
                 exit={{ opacity: 0, scale: 0.85, width: 0 }}
                 transition={{ duration: 0.15 }}
                 onClick={handlePaste}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-white hover:bg-white/10 transition-colors duration-200 whitespace-nowrap overflow-hidden"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-glass-bg-hover transition-colors duration-200 whitespace-nowrap overflow-hidden"
               >
                 <ClipboardPaste className="h-3.5 w-3.5 flex-shrink-0" />
                 Paste
