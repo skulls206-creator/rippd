@@ -37,6 +37,8 @@ user downloads as MP3.
 2. Builds `artifacts/audio-downloader` with `BASE_PATH=/rippd/` and
    `VITE_API_BASE_URL` from GitHub repo variable `vars.VITE_API_BASE_URL`
    (currently `https://rippd.khurk.services`).
+   `BASE_PATH` is `/` because the site is served at root on the custom domain
+   `rippd.khurk.xyz` (the original `skulls206-creator.github.io/rippd/` redirects there).
 3. Uploads `artifacts/audio-downloader/dist/public` and deploys via
    `actions/deploy-pages@v4` (OIDC, no PAT needed at runtime).
 

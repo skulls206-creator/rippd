@@ -32,7 +32,7 @@ a doc instead of inlining it.
   - `replit.md`: fixed outdated "AUDIORIP" brand → "RIPPD"; added glass CSS var conventions
 - **Verified**: `tsc --build` passes, `pnpm -r typecheck` passes on all 4 artifact packages, private IP regex tested with PowerShell
 - **Deployed**: no
-- **Watch out**: New components should use `bg-glass-bg` / `border-glass-border` / `text-glass-text` instead of hardcoded `bg-white/5` / `border-white/10` / `text-white/70`. The Arctic theme is now driven purely by CSS var overrides — no `!important` hacks. If adding a new opacity variant not covered by existing vars, add it to `:root`, each theme in `themes.ts`, and `@theme` in `index.css`.
+- **Watch out**: Custom domain `rippd.khurk.xyz` now uses `BASE_PATH=/` in deploy workflow. If the original GH Pages URL (`skulls206-creator.github.io/rippd/`) is ever used directly without the redirect, it'll break because assets are at root-relative paths. Also, new components should use `bg-glass-bg` / `border-glass-border` / `text-glass-text` instead of hardcoded `bg-white/5` / `border-white/10` / `text-white/70`. The Arctic theme is now driven purely by CSS var overrides — no `!important` hacks. If adding a new opacity variant not covered by existing vars, add it to `:root`, each theme in `themes.ts`, and `@theme` in `index.css`.
 
 ## 2026-05-14 — Replit Agent — AGENTS.md + AGENT_LOG.md added
 - **Why**: User asked for shared context + AARs between AI agents.
