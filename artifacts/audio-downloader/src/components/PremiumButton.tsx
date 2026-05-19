@@ -1,3 +1,7 @@
+// ⚠️  UNUSED COMPONENT — Keep for reference if premium/upsell UI is re-added.
+// Replaces the default shadcn Button with a flashier gradient design.
+// Not imported anywhere in the current codebase.
+
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { motion, type HTMLMotionProps } from "framer-motion";

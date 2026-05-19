@@ -1,3 +1,6 @@
+// ⚠️  UNUSED COMPONENT — Keep for reference if premium/upsell UI is re-added.
+// Provides a styled URL input with a link icon. Not imported anywhere.
+
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 import { Link2 } from "lucide-react";

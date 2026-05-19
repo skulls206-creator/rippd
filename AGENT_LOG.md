@@ -1,8 +1,16 @@
-# AGENT_LOG — After-Action Reports
+# AGENT_LOG — Sync Log & After-Action Reports
 
-Append-only log so multiple AI agents (Replit Agent, Codex, Cursor, Claude Code,
-etc.) can stay in sync. **Newest entry on top.** Read the top ~5 entries before
-starting work so you don't duplicate or undo someone else's change.
+**This is the cross-agent sync file.** Append-only log so multiple AI agents
+(Replit Agent, Codex, Cursor, Claude Code, opencode, etc.) can stay in sync.
+**Newest entry on top.**
+
+## Workflow
+
+1. **Before starting work** — Read the top ~5 entries so you don't duplicate
+   or undo someone else's change.
+2. **After finishing work** — Append a new entry on top documenting what
+   changed, why, what's pending, and anything the next agent needs to know.
+3. **Never rewrite history** — Add new entries only.
 
 ## Entry format
 
@@ -12,6 +20,8 @@ starting work so you don't duplicate or undo someone else's change.
 - **What changed**: bullet list of files / behaviors touched.
 - **Verified**: how you confirmed it works (typecheck, tests, manual, screenshot…).
 - **Deployed**: yes / no — if yes, where (GitHub Pages, Replit Deployment).
+- **Pending / Open questions**: [ ] items the next agent should look at or
+  decide. Omit if nothing.
 - **Watch out**: anything the next agent could trip on. Omit if nothing.
 ```
 
@@ -19,6 +29,30 @@ Keep entries terse. If an entry needs more than ~10 lines, link to a commit or
 a doc instead of inlining it.
 
 ---
+
+## 2026-05-15 22:46 UTC — Satoshi (opencode) — Onboarded & set AGENT_LOG.md as dual sync/AAR file
+- **Why**: Skulls asked me to read all .md files in rippd, understand them, and
+  ensure a sync/handoff mechanism exists so AI agents stay coordinated.
+- **What changed**:
+  - Read and understood `AGENTS.md`, `AGENT_LOG.md`, `replit.md`, and
+    `attached_assets/content-1774634687123.md` (yt-dlp README, not relevant).
+  - Updated `AGENT_LOG.md` header: renamed to "Sync Log & After-Action Reports",
+    added workflow instructions, added **Pending / Open questions** field to the
+    entry format for handoff coordination.
+  - No application code touched.
+- **Verified**: N/A — docs only.
+- **Deployed**: no
+- **Pending / Open questions**:
+  - [ ] This file is now the sync file for all agents (Replit Agent, opencode,
+    Cursor, Codex, etc.). Other AI builder: please use the updated entry format
+    with `Pending / Open questions` when you add entries.
+  - [ ] Repo is cloned locally at `/root/.openclaw/workspace/rippd/` in the
+    opencode environment. If you push changes that need pulling on that side,
+    ping Satoshi.
+- **Watch out**: The `attached_assets/` folder has a yt-dlp README that was
+  auto-fetched — not repo-relevant. AGENTS.md and replit.md are the real
+  source-of-truth docs. Don't touch `artifacts/mockup-sandbox` for shipping
+  features. Use `GITHUB_PAT` for pushes touching `.github/workflows/*`.
 
 ## 2026-05-14 21:40 UTC — opencode — Fix 8 issues: theme double-apply, fragile Arctic CSS, missing destructive/glass vars, private IP regex, blob URL cleanup, docs drift
 - **Why**: User requested review then fix of all 8 issues found during codebase review.

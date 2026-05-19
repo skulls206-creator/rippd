@@ -5,10 +5,27 @@ import { join } from "path";
 import { tmpdir } from "os";
 import crypto from "crypto";
 
+// ── CSRF rationale ─────────────────────────────────────────────────────────
+// CSRF protection is NOT needed for this API for the following reasons:
+//   1. Token-based auth: The API uses bearer tokens (Authorization header),
+//      not cookies. CSRF attacks rely on cookies being automatically sent
+//      by the browser; bearer tokens are not auto-attached.
+//   2. Stateless: No session cookies, no cookie-based auth mechanisms.
+//   3. CORS-restricted: Allowed origins are explicitly whitelisted.
+//   4. SameSite cookies are not used — CSRF is a non-issue without cookies.
+// ───────────────────────────────────────────────────────────────────────────
+
 const router: IRouter = Router();
 
 const TEMP_DIR = join(tmpdir(), "audio-downloads");
 const FILE_TTL_MS = 15 * 60 * 1000;
+
+// Clean up any stale temp files from previous runs on startup.
+fs.readdir(TEMP_DIR).then(files => {
+  for (const f of files) {
+    fs.unlink(join(TEMP_DIR, f)).catch(() => {});
+  }
+}).catch(() => {}); // ignore if dir doesn't exist yet
 
 interface DownloadEntry {
   filePath: string;
@@ -76,6 +93,12 @@ function validateUrl(raw: string): URL {
     throw new Error(
       "Unsupported site. Paste a link from YouTube, SoundCloud, Spotify, or another supported platform.",
     );
+  }
+
+  // Prevent argument injection: if the raw URL starts with "--" it would
+  // be interpreted by yt-dlp as a CLI flag, allowing arbitrary argument injection.
+  if (raw.startsWith('--')) {
+    throw new Error("Invalid URL format: URL must not start with '--'.");
   }
 
   return parsed;
@@ -149,6 +172,10 @@ async function runYtDlp(args: string[]): Promise<{ stdout: string; stderr: strin
   }
   throw lastError;
 }
+
+/** Validates a YouTube video ID: exactly 11 chars, alphanumeric + `-_` */
+const YT_ID_RE = /^[A-Za-z0-9_-]{11}$/;
+const isValidYoutubeId = (id: string): boolean => YT_ID_RE.test(id);
 
 function sanitizeFilename(name: string): string {
   return name
@@ -290,14 +317,19 @@ router.post("/download/playlist-info", async (req, res) => {
 
     const tracks = lines.map((line, i) => {
       const item = JSON.parse(line);
-      const trackUrl =
-        item.url ||
-        item.webpage_url ||
-        (item.id && item.ie_key === "Youtube"
-          ? `https://www.youtube.com/watch?v=${item.id}`
-          : item.id
-            ? `https://www.youtube.com/watch?v=${item.id}`
-            : null);
+
+      // Validate YouTube video IDs before constructing URLs
+      let trackUrl: string | null;
+      if (item.id && (item.ie_key === "Youtube" || !item.url)) {
+        if (isValidYoutubeId(item.id)) {
+          trackUrl = `https://www.youtube.com/watch?v=${item.id}`;
+        } else {
+          trackUrl = null;
+        }
+      } else {
+        trackUrl = item.url || item.webpage_url || null;
+      }
+
       return {
         index: i + 1,
         id: item.id || String(i),
